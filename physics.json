@@ -221,7 +221,7 @@
   "220": { "german": "der Aktor", "english": "Actuator" },
   "221": { "german": "die Telemetrie", "english": "Telemetry" },
   "222": { "german": "die Antenne", "english": "Antenna" },
-  223": { "german": "das Signal", "english": "Signal" },
+  "223": { "german": "das Signal", "english": "Signal" },
   "224": { "german": "die Frequenz", "english": "Frequency" },
   "225": { "german": "die Modulation", "english": "Modulation" },
   "226": { "german": "die Rauschabstand", "english": "Signal-to-noise ratio" },
