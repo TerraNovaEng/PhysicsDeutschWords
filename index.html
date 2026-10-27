@@ -286,14 +286,14 @@
                 <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-800 pb-4">
                     <div>
                         <h3 class="text-xl font-bold text-cyan-400">🚀 Rocket Aerodynamics & Flight Lab</h3>
-                        <p class="text-slate-400 text-sm">Design your airframe parameters and calculate real-time drag, Reynolds number, and lift physics in German & English.</p>
+                        <p class="text-slate-400 text-sm">Design your airframe parameters and calculate real-time drag, Reynolds number, and flight feasibility in German & English.</p>
                     </div>
                     <span class="text-xs px-3 py-1 rounded bg-cyan-950/60 border border-cyan-800 text-cyan-300 font-mono">Interactive Simulator</span>
                 </div>
 
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                     <!-- Sliders & Inputs -->
-                    <div class="space-y-5 bg-slate-950 p-5 rounded-xl border border-slate-800/80">
+                    <div class="space-y-4 bg-slate-950 p-5 rounded-xl border border-slate-800/80">
                         <h4 class="font-bold text-white text-sm uppercase tracking-wider text-cyan-400">Design Parameters / Parameter</h4>
                         
                         <div>
@@ -320,32 +320,53 @@
                             <input type="range" x-model.number="rocket.velocity" min="10" max="500" step="5" class="w-full accent-cyan-500 bg-slate-900">
                         </div>
 
+                        <div class="pt-2 border-t border-slate-900">
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Target Altitude (<span class="italic">die Zielhöhe</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="rocket.targetAltitude + ' m'"></span>
+                            </div>
+                            <input type="range" x-model.number="rocket.targetAltitude" min="100" max="3000" step="50" class="w-full accent-cyan-500 bg-slate-900">
+                        </div>
+
                         <div>
                             <div class="flex justify-between text-xs mb-1">
-                                <span class="text-slate-300">Altitude (<span class="italic">die Höhe</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="rocket.altitude + ' m'"></span>
+                                <span class="text-slate-300">Motor Impulse (<span class="italic">Gesamtimpuls Ns</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="rocket.impulse + ' Ns'"></span>
                             </div>
-                            <input type="range" x-model.number="rocket.altitude" min="0" max="10000" step="100" class="w-full accent-cyan-500 bg-slate-900">
+                            <input type="range" x-model.number="rocket.impulse" min="20" max="600" step="10" class="w-full accent-cyan-500 bg-slate-900">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Rocket Mass (<span class="italic">die Masse g</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="rocket.mass + ' g'"></span>
+                            </div>
+                            <input type="range" x-model.number="rocket.mass" min="100" max="3000" step="50" class="w-full accent-cyan-500 bg-slate-900">
                         </div>
                     </div>
 
-                    <!-- Visual Blueprint Preview -->
-                    <div class="bg-slate-950 p-5 rounded-xl border border-slate-800/80 flex flex-col items-center justify-center relative overflow-hidden">
-                        <span class="absolute top-3 left-3 text-xs text-slate-500 font-mono">Blueprint / Skizze</span>
-                        <div class="h-64 flex items-center justify-center">
-                            <!-- Dynamic SVG Rocket -->
-                            <svg viewBox="0 0 100 300" class="h-full w-auto drop-shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                                <!-- Nose Cone -->
-                                <path d="M50 10 Q 50 10, 70 80 L 30 80 Z" fill="#0e7490" stroke="#22d3ee" stroke-width="2"/>
-                                <!-- Body Tube -->
-                                <rect x="30" y="80" width="40" :height="bodyTubeHeight" fill="#090d16" stroke="#22d3ee" stroke-width="2"/>
-                                <!-- Fins -->
-                                <polygon points="30,220 10,260 30,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
-                                <polygon points="70,220 90,260 70,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
-                            </svg>
+                    <!-- Visual Blueprint Preview & Feasibility Status -->
+                    <div class="bg-slate-950 p-5 rounded-xl border border-slate-800/80 flex flex-col justify-between relative overflow-hidden">
+                        <div>
+                            <span class="text-xs text-slate-500 font-mono block mb-2">Blueprint & Feasibility / Machbarkeit</span>
+                            <div class="h-40 flex items-center justify-center">
+                                <!-- Dynamic SVG Rocket -->
+                                <svg viewBox="0 0 100 300" class="h-full w-auto drop-shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                                    <!-- Nose Cone -->
+                                    <path d="M50 10 Q 50 10, 70 80 L 30 80 Z" fill="#0e7490" stroke="#22d3ee" stroke-width="2"/>
+                                    <!-- Body Tube -->
+                                    <rect x="30" y="80" width="40" :height="bodyTubeHeight" fill="#090d16" stroke="#22d3ee" stroke-width="2"/>
+                                    <!-- Fins -->
+                                    <polygon points="30,220 10,260 30,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
+                                    <polygon points="70,220 90,260 70,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
+                                </svg>
+                            </div>
                         </div>
-                        <div class="text-center mt-2">
-                            <span class="text-xs text-slate-400">Aspect Ratio / Schlankheitsgrad: <strong class="text-cyan-400" x-text="aspectRatio"></strong></span>
+
+                        <!-- Feasibility Alert Box -->
+                        <div class="mt-4 p-3 rounded-lg border text-xs" :class="isFeasible ? 'bg-emerald-950/40 border-emerald-600 text-emerald-200' : 'bg-amber-950/40 border-amber-600 text-amber-200'">
+                            <div class="font-bold mb-1" x-text="isFeasible ? '✅ Target Altitude Achievable / Zielhöhe erreichbar' : '⚠️ Insufficient Impulse / Zu geringer Impuls'"></div>
+                            <div class="text-[11px] opacity-90" x-text="feasibilityMessage"></div>
                         </div>
                     </div>
 
@@ -355,43 +376,58 @@
                         
                         <div class="space-y-3 text-sm">
                             <div class="flex justify-between border-b border-slate-900 pb-2">
-                                <span class="text-slate-400">Air Density (<span class="text-xs text-cyan-300">Luftdichte ρ</span>):</span>
-                                <span class="font-mono text-white" x-text="airDensity + ' kg/m³'"></span>
-                            </div>
-                            <div class="flex justify-between border-b border-slate-900 pb-2">
-                                <span class="text-slate-400">Reynolds Number (<span class="text-xs text-cyan-300">Reynolds-Zahl Re</span>):</span>
+                                <span class="text-slate-400">Reynolds Number (<span class="text-xs text-cyan-300">Re</span>):</span>
                                 <span class="font-mono text-white" x-text="reynoldsNumber"></span>
                             </div>
                             <div class="flex justify-between border-b border-slate-900 pb-2">
-                                <span class="text-slate-400">Drag Coefficient (<span class="text-xs text-cyan-300">Widerstandsbeiwert Cd</span>):</span>
+                                <span class="text-slate-400">Drag Coefficient (<span class="text-xs text-cyan-300">Cd</span>):</span>
                                 <span class="font-mono text-white" x-text="dragCoefficient"></span>
                             </div>
                             <div class="flex justify-between border-b border-slate-900 pb-2">
                                 <span class="text-slate-400">Total Drag Force (<span class="text-xs text-cyan-300">Luftwiderstand Fd</span>):</span>
                                 <span class="font-mono text-emerald-400 font-bold" x-text="dragForce + ' N'"></span>
                             </div>
+                            <div class="flex justify-between border-b border-slate-900 pb-2">
+                                <span class="text-slate-400">Est. Max Apogee (<span class="text-xs text-cyan-300">Gipfelhöhe</span>):</span>
+                                <span class="font-mono text-cyan-300 font-bold" x-text="estimatedApogee + ' m'"></span>
+                            </div>
                             <div class="flex justify-between">
-                                <span class="text-slate-400">Mach Number (<span class="text-xs text-cyan-300">Mach-Zahl</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="machNumber"></span>
+                                <span class="text-slate-400">Thrust-to-Weight (<span class="text-xs text-cyan-300">Schub-Gewicht</span>):</span>
+                                <span class="font-mono text-white" x-text="thrustToWeightRatio + ':1'"></span>
                             </div>
                         </div>
 
-                        <button @click="speak('Die Rakete erzeugt einen Luftwiderstand von ' + dragForce + ' Newton bei einer Geschwindigkeit von ' + rocket.velocity + ' Metern pro Sekunde.')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 rounded-lg text-sm font-medium transition shadow">
+                        <button @click="speak('Die geschätzte Gipfelhöhe beträgt ' + estimatedApogee + ' Meter bei einem Gesamtimpuls von ' + rocket.impulse + ' Newtonsekunden.')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 rounded-lg text-sm font-medium transition shadow">
                             🔊 Speak Flight Report (DE)
                         </button>
                     </div>
                 </div>
 
-                <!-- German-English Rocketry Vocabulary Grid -->
+                <!-- NEW: Apogee & Feasibility Explanation Card -->
+                <div class="mt-8 p-5 bg-slate-950 rounded-xl border border-slate-800">
+                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3">How Do We Know If It Reaches Target Altitude? / Wie prüfen wir die Zielhöhe?</h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
+                        <div class="space-y-2">
+                            <p><strong class="text-white">🇩🇪 Energiebilanz & Verluste:</strong> Um eine Zielhöhe ($h$) zu erreichen, muss die vom Motor gelieferte Energie (Gesamtimpuls) die potentielle Energie ($E_p = m \cdot g \cdot h$) und die aerodynamischen Verluste durch Luftwiderstand ($F_d$) überwinden.</p>
+                            <p><strong class="text-white">Schub-Gewicht-Verhältnis:</strong> Ein Startwert von mindestens 5:1 sorgt dafür, dass die Rakete die Startrampe schnell verlässt, bevor Instabilitàten auftreten.</p>
+                        </div>
+                        <div class="space-y-2">
+                            <p><strong class="text-white">🇬🇧 Energy Balance & Losses:</strong> To reach a target altitude ($h$), the motor's total impulse energy must overcome potential energy ($E_p = m \cdot g \cdot h$) and aerodynamic drag losses ($F_d$).</p>
+                            <p><strong class="text-white">Thrust-to-Weight:</strong> A liftoff ratio of at least 5:1 ensures the rocket clears the launch rod cleanly before aerodynamic control takes over.</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- German-English Rocketry Vocabulary Glossary -->
                 <div class="mt-8 pt-6 border-t border-slate-800">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-4">Aerodynamics & Rocketry Vocabulary Glossary</h4>
+                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-4">Aerodynamics & Rocketry Vocabulary Glossary / Vokabelliste</h4>
                     <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
                         <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Luftwiderstand</strong>Drag / Air Resistance</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Auftrieb</strong>Lift</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Zielhöhe</strong>Target Altitude</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Gesamtimpuls</strong>Total Impulse ($N\cdot s$)</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Gipfelhöhe (Apogäum)</strong>Apogee / Peak Altitude</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">das Schub-Gewicht-Verhältnis</strong>Thrust-to-Weight Ratio</div>
                         <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Reynolds-Zahl</strong>Reynolds Number</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Mach-Zahl</strong>Mach Number</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Schub</strong>Thrust</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Luftdichte</strong>Air Density</div>
                         <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Anstellwinkel</strong>Angle of Attack</div>
                         <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Grenzschicht</strong>Boundary Layer</div>
                     </div>
@@ -433,10 +469,12 @@
 
                 // Rocket Lab Simulator State
                 rocket: {
-                    diameter: 50, // mm
-                    length: 750,  // mm
-                    velocity: 120, // m/s
-                    altitude: 0   // m
+                    diameter: 50,       // mm
+                    length: 750,        // mm
+                    velocity: 120,      // m/s
+                    targetAltitude: 500,// m
+                    impulse: 160,       // Ns (e.g. F39 motor range)
+                    mass: 450           // g
                 },
 
                 builtSentence: [],
@@ -516,16 +554,14 @@
 
                 // Rocket Simulator Computed Properties
                 get airDensity() {
-                    let h = this.rocket.altitude;
-                    let rho = 1.225 * Math.pow((1 - 2.2557e-5 * h), 4.256);
-                    return Math.max(rho, 0.1).toFixed(3);
+                    return 1.225;
                 },
 
                 get reynoldsNumber() {
-                    let rho = parseFloat(this.airDensity);
+                    let rho = 1.225;
                     let v = this.rocket.velocity;
-                    let L = this.rocket.length / 1000; // meters
-                    let mu = 1.81e-5; // dynamic viscosity of air
+                    let L = this.rocket.length / 1000;
+                    let mu = 1.81e-5;
                     let re = (rho * v * L) / mu;
                     return re.toExponential(2);
                 },
@@ -537,27 +573,47 @@
                 },
 
                 get dragForce() {
-                    let rho = parseFloat(this.airDensity);
+                    let rho = 1.225;
                     let v = this.rocket.velocity;
-                    let d = this.rocket.diameter / 1000; // meters
-                    let S = Math.PI * Math.pow(d / 2, 2); // cross-sectional area
+                    let d = this.rocket.diameter / 1000;
+                    let S = Math.PI * Math.pow(d / 2, 2);
                     let cd = parseFloat(this.dragCoefficient);
                     let fd = 0.5 * rho * Math.pow(v, 2) * S * cd;
                     return fd.toFixed(1);
                 },
 
-                get machNumber() {
-                    let v = this.rocket.velocity;
-                    let a = 340; // speed of sound in m/s approx
-                    return (v / a).toFixed(2);
+                get estimatedApogee() {
+                    let massKg = this.rocket.mass / 1000;
+                    let impulse = this.rocket.impulse;
+                    let totalEnergy = impulse * 35; 
+                    let cd = parseFloat(this.dragCoefficient);
+                    let dragPenalty = cd * 120; 
+                    let netEnergy = Math.max(50, totalEnergy - dragPenalty);
+                    let g = 9.81;
+                    let apogee = netEnergy / (massKg * g);
+                    return Math.round(Math.min(5000, Math.max(50, apogee)));
                 },
 
-                get aspectRatio() {
-                    return (this.rocket.length / this.rocket.diameter).toFixed(1) + ':1';
+                get thrustToWeightRatio() {
+                    let massKg = this.rocket.mass / 1000;
+                    let weightN = massKg * 9.81;
+                    let avgThrust = this.rocket.impulse / 1.5;
+                    return (avgThrust / weightN).toFixed(1);
+                },
+
+                get isFeasible() {
+                    return this.estimatedApogee >= this.rocket.targetAltitude;
+                },
+
+                get feasibilityMessage() {
+                    if (this.isFeasible) {
+                        return `Est. apogee (${this.estimatedApogee}m) meets or exceeds target (${this.rocket.targetAltitude}m). / Geschätzte Gipfelhöhe erreicht Zielhöhe.`;
+                    } else {
+                        return `Target (${this.rocket.targetAltitude}m) exceeds estimated apogee (${this.estimatedApogee}m). Increase impulse or reduce mass. / Zielhöhe zu hoch für den aktuellen Impuls.`;
+                    }
                 },
 
                 get bodyTubeHeight() {
-                    // scale svg height based on slider (min 60, max 160)
                     return Math.min(160, Math.max(60, this.rocket.length / 10));
                 },
 
