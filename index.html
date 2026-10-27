@@ -35,6 +35,7 @@
                 <button @click="viewMode = 'quiz'; initQuiz()" :class="viewMode === 'quiz' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Quiz</button>
                 <button @click="viewMode = 'builder'" :class="viewMode === 'builder' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Flight Log Builder</button>
                 <button @click="viewMode = 'memory'; initMemoryGame()" :class="viewMode === 'memory' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Memory Match</button>
+                <button @click="viewMode = 'complex'" :class="viewMode === 'complex' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Complex Web</button>
             </div>
         </div>
     </header>
@@ -43,7 +44,7 @@
     <main class="max-w-6xl mx-auto px-4 sm:px-8 py-8">
 
         <!-- Controls: Search, Filters & Bookmarks -->
-        <div class="flex flex-col md:flex-row gap-4 mb-8" x-show="viewMode !== 'memory' && viewMode !== 'quiz' && viewMode !== 'builder'">
+        <div class="flex flex-col md:flex-row gap-4 mb-8" x-show="viewMode !== 'memory' && viewMode !== 'quiz' && viewMode !== 'builder' && viewMode !== 'complex'">
             <div class="relative flex-1">
                 <input type="text" x-model="searchQuery" placeholder="Search physics term, English translation, or number..." 
                     class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 pl-10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
@@ -267,14 +268,25 @@
                     <div @click="flipCard(card)" 
                          class="h-28 bg-slate-900 border-2 rounded-xl flex items-center justify-center p-3 text-center cursor-pointer transition transform duration-300 select-none shadow-md"
                          :class="{
-                            'border-slate-800 hover:border-cyan-500 bg-slate-900': !card.flipped && !card.matched,
-                            'border-cyan-500 bg-slate-950 text-white scale-105': card.flipped && !card.matched,
-                            'border-emerald-600 bg-emerald-950/40 text-emerald-300 opacity-80 cursor-default': card.matched
+                          'border-slate-800 hover:border-cyan-500 bg-slate-900': !card.flipped && !card.matched,
+                          'border-cyan-500 bg-slate-950 text-white scale-105': card.flipped && !card.matched,
+                          'border-emerald-600 bg-emerald-950/40 text-emerald-300 opacity-80 cursor-default': card.matched
                          }">
                         <div x-show="!card.flipped && !card.matched" class="text-slate-600 font-bold text-xl">#</div>
                         <div x-show="card.flipped || card.matched" class="text-xs sm:text-sm font-semibold" x-text="card.text"></div>
                     </div>
                 </template>
+            </div>
+        </div>
+
+        <!-- COMPLEX WEB EMBED VIEW -->
+        <div x-show="viewMode === 'complex'" class="w-full">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
+                <div class="bg-slate-950 px-4 py-3 border-b border-slate-800 flex justify-between items-center text-xs text-slate-400">
+                    <span class="font-mono">https://terranovaeng.github.io/complexweb/</span>
+                    <a href="https://terranovaeng.github.io/complexweb/" target="_blank" class="text-cyan-400 hover:underline">Open in new tab ↗</a>
+                </div>
+                <iframe src="https://terranovaeng.github.io/complexweb/" class="w-full h-[75vh] border-0 bg-slate-950" title="Complex Web"></iframe>
             </div>
         </div>
 
