@@ -35,6 +35,7 @@
                 <button @click="viewMode = 'quiz'; initQuiz()" :class="viewMode === 'quiz' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Quiz</button>
                 <button @click="viewMode = 'builder'" :class="viewMode === 'builder' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Flight Log Builder</button>
                 <button @click="viewMode = 'memory'; initMemoryGame()" :class="viewMode === 'memory' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Memory Match</button>
+                <button @click="viewMode = 'rocket'" :class="viewMode === 'rocket' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Rocket Lab</button>
                 <button @click="viewMode = 'complex'" :class="viewMode === 'complex' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Complex Web</button>
             </div>
         </div>
@@ -44,7 +45,7 @@
     <main class="max-w-6xl mx-auto px-4 sm:px-8 py-8">
 
         <!-- Controls: Search, Filters & Bookmarks -->
-        <div class="flex flex-col md:flex-row gap-4 mb-8" x-show="viewMode !== 'memory' && viewMode !== 'quiz' && viewMode !== 'builder' && viewMode !== 'complex'">
+        <div class="flex flex-col md:flex-row gap-4 mb-8" x-show="viewMode !== 'memory' && viewMode !== 'quiz' && viewMode !== 'builder' && viewMode !== 'rocket' && viewMode !== 'complex'">
             <div class="relative flex-1">
                 <input type="text" x-model="searchQuery" placeholder="Search physics term, English translation, or number..." 
                     class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 pl-10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
@@ -279,6 +280,125 @@
             </div>
         </div>
 
+        <!-- ROCKET LAB VIEW -->
+        <div x-show="viewMode === 'rocket'" class="max-w-5xl mx-auto space-y-8">
+            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-800 pb-4">
+                    <div>
+                        <h3 class="text-xl font-bold text-cyan-400">🚀 Rocket Aerodynamics & Flight Lab</h3>
+                        <p class="text-slate-400 text-sm">Design your airframe parameters and calculate real-time drag, Reynolds number, and lift physics in German & English.</p>
+                    </div>
+                    <span class="text-xs px-3 py-1 rounded bg-cyan-950/60 border border-cyan-800 text-cyan-300 font-mono">Interactive Simulator</span>
+                </div>
+
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                    <!-- Sliders & Inputs -->
+                    <div class="space-y-5 bg-slate-950 p-5 rounded-xl border border-slate-800/80">
+                        <h4 class="font-bold text-white text-sm uppercase tracking-wider text-cyan-400">Design Parameters / Parameter</h4>
+                        
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Body Diameter (<span class="italic">der Durchmesser</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="rocket.diameter + ' mm'"></span>
+                            </div>
+                            <input type="range" x-model.number="rocket.diameter" min="20" max="150" step="1" class="w-full accent-cyan-500 bg-slate-900">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Body Length (<span class="italic">die Länge</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="rocket.length + ' mm'"></span>
+                            </div>
+                            <input type="range" x-model.number="rocket.length" min="200" max="2000" step="10" class="w-full accent-cyan-500 bg-slate-900">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Velocity (<span class="italic">die Geschwindigkeit</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="rocket.velocity + ' m/s'"></span>
+                            </div>
+                            <input type="range" x-model.number="rocket.velocity" min="10" max="500" step="5" class="w-full accent-cyan-500 bg-slate-900">
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <span class="text-slate-300">Altitude (<span class="italic">die Höhe</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="rocket.altitude + ' m'"></span>
+                            </div>
+                            <input type="range" x-model.number="rocket.altitude" min="0" max="10000" step="100" class="w-full accent-cyan-500 bg-slate-900">
+                        </div>
+                    </div>
+
+                    <!-- Visual Blueprint Preview -->
+                    <div class="bg-slate-950 p-5 rounded-xl border border-slate-800/80 flex flex-col items-center justify-center relative overflow-hidden">
+                        <span class="absolute top-3 left-3 text-xs text-slate-500 font-mono">Blueprint / Skizze</span>
+                        <div class="h-64 flex items-center justify-center">
+                            <!-- Dynamic SVG Rocket -->
+                            <svg viewBox="0 0 100 300" class="h-full w-auto drop-shadow-[0_0_15px_rgba(6,182,212,0.2)]">
+                                <!-- Nose Cone -->
+                                <path d="M50 10 Q 50 10, 70 80 L 30 80 Z" fill="#0e7490" stroke="#22d3ee" stroke-width="2"/>
+                                <!-- Body Tube -->
+                                <rect x="30" y="80" width="40" :height="bodyTubeHeight" fill="#090d16" stroke="#22d3ee" stroke-width="2"/>
+                                <!-- Fins -->
+                                <polygon points="30,220 10,260 30,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
+                                <polygon points="70,220 90,260 70,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <div class="text-center mt-2">
+                            <span class="text-xs text-slate-400">Aspect Ratio / Schlankheitsgrad: <strong class="text-cyan-400" x-text="aspectRatio"></strong></span>
+                        </div>
+                    </div>
+
+                    <!-- Aerodynamic Output Metrics -->
+                    <div class="space-y-4 bg-slate-950 p-5 rounded-xl border border-slate-800/80 flex flex-col justify-between">
+                        <h4 class="font-bold text-white text-sm uppercase tracking-wider text-cyan-400">Flight Calculations / Ergebnisse</h4>
+                        
+                        <div class="space-y-3 text-sm">
+                            <div class="flex justify-between border-b border-slate-900 pb-2">
+                                <span class="text-slate-400">Air Density (<span class="text-xs text-cyan-300">Luftdichte ρ</span>):</span>
+                                <span class="font-mono text-white" x-text="airDensity + ' kg/m³'"></span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-900 pb-2">
+                                <span class="text-slate-400">Reynolds Number (<span class="text-xs text-cyan-300">Reynolds-Zahl Re</span>):</span>
+                                <span class="font-mono text-white" x-text="reynoldsNumber"></span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-900 pb-2">
+                                <span class="text-slate-400">Drag Coefficient (<span class="text-xs text-cyan-300">Widerstandsbeiwert Cd</span>):</span>
+                                <span class="font-mono text-white" x-text="dragCoefficient"></span>
+                            </div>
+                            <div class="flex justify-between border-b border-slate-900 pb-2">
+                                <span class="text-slate-400">Total Drag Force (<span class="text-xs text-cyan-300">Luftwiderstand Fd</span>):</span>
+                                <span class="font-mono text-emerald-400 font-bold" x-text="dragForce + ' N'"></span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span class="text-slate-400">Mach Number (<span class="text-xs text-cyan-300">Mach-Zahl</span>):</span>
+                                <span class="font-mono text-cyan-300" x-text="machNumber"></span>
+                            </div>
+                        </div>
+
+                        <button @click="speak('Die Rakete erzeugt einen Luftwiderstand von ' + dragForce + ' Newton bei einer Geschwindigkeit von ' + rocket.velocity + ' Metern pro Sekunde.')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 rounded-lg text-sm font-medium transition shadow">
+                            🔊 Speak Flight Report (DE)
+                        </button>
+                    </div>
+                </div>
+
+                <!-- German-English Rocketry Vocabulary Grid -->
+                <div class="mt-8 pt-6 border-t border-slate-800">
+                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-4">Aerodynamics & Rocketry Vocabulary Glossary</h4>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Luftwiderstand</strong>Drag / Air Resistance</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Auftrieb</strong>Lift</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Reynolds-Zahl</strong>Reynolds Number</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Mach-Zahl</strong>Mach Number</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Schub</strong>Thrust</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Luftdichte</strong>Air Density</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Anstellwinkel</strong>Angle of Attack</div>
+                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Grenzschicht</strong>Boundary Layer</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- COMPLEX WEB EMBED VIEW -->
         <div x-show="viewMode === 'complex'" class="w-full">
             <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
@@ -310,6 +430,14 @@
                 dataSource: 'Loading...',
                 starredWords: JSON.parse(localStorage.getItem('starred_physics') || '[]'),
                 showStarredOnly: false,
+
+                // Rocket Lab Simulator State
+                rocket: {
+                    diameter: 50, // mm
+                    length: 750,  // mm
+                    velocity: 120, // m/s
+                    altitude: 0   // m
+                },
 
                 builtSentence: [],
                 feedback: null,
@@ -384,6 +512,53 @@
                         });
                     }
                     return chunks;
+                },
+
+                // Rocket Simulator Computed Properties
+                get airDensity() {
+                    let h = this.rocket.altitude;
+                    let rho = 1.225 * Math.pow((1 - 2.2557e-5 * h), 4.256);
+                    return Math.max(rho, 0.1).toFixed(3);
+                },
+
+                get reynoldsNumber() {
+                    let rho = parseFloat(this.airDensity);
+                    let v = this.rocket.velocity;
+                    let L = this.rocket.length / 1000; // meters
+                    let mu = 1.81e-5; // dynamic viscosity of air
+                    let re = (rho * v * L) / mu;
+                    return re.toExponential(2);
+                },
+
+                get dragCoefficient() {
+                    let fineness = this.rocket.length / this.rocket.diameter;
+                    let cd = 0.3 + (1 / fineness) * 0.15;
+                    return cd.toFixed(2);
+                },
+
+                get dragForce() {
+                    let rho = parseFloat(this.airDensity);
+                    let v = this.rocket.velocity;
+                    let d = this.rocket.diameter / 1000; // meters
+                    let S = Math.PI * Math.pow(d / 2, 2); // cross-sectional area
+                    let cd = parseFloat(this.dragCoefficient);
+                    let fd = 0.5 * rho * Math.pow(v, 2) * S * cd;
+                    return fd.toFixed(1);
+                },
+
+                get machNumber() {
+                    let v = this.rocket.velocity;
+                    let a = 340; // speed of sound in m/s approx
+                    return (v / a).toFixed(2);
+                },
+
+                get aspectRatio() {
+                    return (this.rocket.length / this.rocket.diameter).toFixed(1) + ':1';
+                },
+
+                get bodyTubeHeight() {
+                    // scale svg height based on slider (min 60, max 160)
+                    return Math.min(160, Math.max(60, this.rocket.length / 10));
                 },
 
                 speak(text) {
