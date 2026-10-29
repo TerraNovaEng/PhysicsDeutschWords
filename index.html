@@ -167,7 +167,7 @@
                 </div>
 
                 <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 font-semibold flex justify-between items-center">
+                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 flex justify-between items-center">
                         <span>Action Verbs</span>
                         <span class="text-xs text-slate-500 font-mono" x-text="verbsSource"></span>
                     </h4>
@@ -199,7 +199,7 @@
                             Vocabulary Terms (Showing <span x-text="builderPageWords.length"></span>)
                         </h4>
                         <!-- Toggle for Article vs No-Article Terms -->
-                        <button @click="useNoArticles = !useNoArticles" class="text-xs px-2.5 py-1 rounded border transition font-mono" :class="useNoArticles ? 'bg-cyan-950 border-cyan-600 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'">
+                        <button @click="toggleVocabularyMode()" class="text-xs px-2.5 py-1 rounded border transition font-mono" :class="useNoArticles ? 'bg-cyan-950 border-cyan-600 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'">
                             <span x-text="useNoArticles ? 'Mode: noarticle.json' : 'Mode: physics.json'"></span>
                         </button>
                     </div>
@@ -505,7 +505,7 @@
         TerraNova Engineering Lab &bull; Physics & Aerospace Vocabulary Workshop
     </footer>
 
- <!-- JavaScript Data and Application Logic -->
+    <!-- JavaScript Data and Application Logic -->
     <script>
         function physicsApp() {
             return {
@@ -521,13 +521,14 @@
                 starredWords: JSON.parse(localStorage.getItem('starred_physics') || '[]'),
                 showStarredOnly: false,
 
-                // Builder Pagination State (25–30 terms per page)
+                // Builder Pagination State (28 terms per page)
                 builderPageIndex: 0,
                 builderPageSize: 28,
 
-                // External JSON Data Sources for Verbs & Modifiers
-                verbsSource: 'Fallback',
-                modifiersSource: 'Fallback',
+                // External Data Sources Status Labels
+                verbsSource: 'Loading...',
+                modifiersSource: 'Loading...',
+                noArticleSource: 'Loading...',
 
                 // Rocket Lab Simulator State
                 rocket: {
@@ -541,10 +542,12 @@
 
                 builtSentence: [],
                 feedback: null,
+
+                // Dedicated Toolboxes for Each JSON Resource
                 physicsToolbox: {
                     pronouns: ['die Rakete', 'der Motor', 'der Körper', 'wir', 'es', 'der Wind'],
-                    verbs: ['erzeugt', 'beschleunigt', 'wirkt', 'fliegt', 'steigt', 'sinkt', 'stabilisiert'],
-                    modifiers: ['schnell', 'hoch', 'nach oben', 'gegen', 'mit', 'durch', 'maximal']
+                    verbs: [],        // Loaded from verbs.json
+                    modifiers: []     // Loaded from modifiers.json
                 },
                 
                 quizIndex: 0,
@@ -571,14 +574,16 @@
                 memorizeTimer: null,
 
                 async initData() {
-                    // Helper function to extract string values cleanly regardless of JSON shape
-                    const extractWords = (data) => {
-                        if (Array.isArray(data)) return data;
+                    // Helper function to extract correct string values regardless of JSON schema
+                    const extractStrings = (data) => {
+                        if (Array.isArray(data)) {
+                            return data.map(item => (typeof item === 'object' && item !== null) ? (item.german || item.deutsch || item.word || item.text || item.english) : String(item));
+                        }
                         if (typeof data === 'object' && data !== null) {
                             return Object.values(data).map(item => {
                                 if (typeof item === 'string') return item;
                                 if (typeof item === 'object' && item !== null) {
-                                    return item.german || item.deutsch || item.word || item.text || item.english || JSON.stringify(item);
+                                    return item.german || item.deutsch || item.word || item.text || item.english || String(item);
                                 }
                                 return String(item);
                             });
@@ -586,7 +591,7 @@
                         return [];
                     };
 
-                    // 1. Fetch physics.json (With Articles)
+                    // 1. Vocabulary Terms with Articles -> physics.json
                     try {
                         let response = await fetch('physics.json');
                         if (!response.ok) throw new Error('File not found');
@@ -605,36 +610,44 @@
                         this.dataSource = 'Hardcoded Fallback';
                     }
 
-                    // 2. Fetch noarticle.json (Without Articles)
+                    // 2. Vocabulary Terms without Articles -> noarticle.json
                     try {
                         let resNoArt = await fetch('noarticle.json');
                         if (resNoArt.ok) {
                             let dataNoArt = await resNoArt.json();
                             this.noArticleSections = Array.isArray(dataNoArt) ? dataNoArt : (dataNoArt.sections ? dataNoArt.sections : this.formatRawWordsToSections(dataNoArt));
+                            this.noArticleSource = 'noarticle.json';
                         }
                     } catch (e) {
                         this.noArticleSections = [];
+                        this.noArticleSource = 'Unavailable';
                     }
 
-                    // 3. Fetch verbs.json
+                    // 3. Action Verbs -> verbs.json
                     try {
                         let resVerbs = await fetch('verbs.json');
                         if (resVerbs.ok) {
                             let verbsData = await resVerbs.json();
-                            this.physicsToolbox.verbs = extractWords(verbsData);
+                            this.physicsToolbox.verbs = extractStrings(verbsData);
                             this.verbsSource = 'verbs.json';
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        this.physicsToolbox.verbs = ['erzeugt', 'beschleunigt', 'wirkt', 'fliegt', 'steigt', 'sinkt', 'stabilisiert'];
+                        this.verbsSource = 'Fallback';
+                    }
 
-                    // 4. Fetch modifiers.json
+                    // 4. Modifiers & Connectors -> modifiers.json
                     try {
                         let resMod = await fetch('modifiers.json');
                         if (resMod.ok) {
                             let modData = await resMod.json();
-                            this.physicsToolbox.modifiers = extractWords(modData);
+                            this.physicsToolbox.modifiers = extractStrings(modData);
                             this.modifiersSource = 'modifiers.json';
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        this.physicsToolbox.modifiers = ['schnell', 'hoch', 'nach oben', 'gegen', 'mit', 'durch', 'maximal'];
+                        this.modifiersSource = 'Fallback';
+                    }
                 },
 
                 formatRawWordsToSections(rawObj) {
@@ -670,6 +683,7 @@
                     this.feedback = null;
                 },
 
+                // Dynamic Vocabulary Selection between physics.json and noarticle.json
                 get activeSections() {
                     return (this.useNoArticles && this.noArticleSections.length > 0) ? this.noArticleSections : this.sections;
                 },
@@ -684,7 +698,7 @@
                     return list;
                 },
 
-                // Builder Vocabulary Pagination (25 to 30 words per page)
+                // Builder Vocabulary Pagination
                 get totalBuilderPages() {
                     return Math.ceil(this.activeFlattenedWords.length / this.builderPageSize) || 1;
                 },
@@ -704,10 +718,12 @@
                     if (this.builderPageIndex > 0) {
                         this.builderPageIndex--;
                     }
-                }
-            }
-        }
-    </script>
+                },
+
+                toggleVocabularyMode() {
+                    this.useNoArticles = !this.useNoArticles;
+                    this.builderPageIndex = 0;
+                },
 
                 // Memory Match Game with Distinct Colors for DE and EN Cards
                 initMemoryGame() {
@@ -721,7 +737,6 @@
                     let selectedWords = allWords.slice(0, this.totalPairs);
                     let cards = [];
                     selectedWords.forEach((word, index) => {
-                        // Type 'de' = German Card (Cyan-themed), Type 'en' = English Card (Indigo-themed)
                         cards.push({ id: 'g_' + index, pairId: index, text: word.german, type: 'de', flipped: true, matched: false });
                         cards.push({ id: 'm_' + index, pairId: index, text: word.meaning, type: 'en', flipped: true, matched: false });
                     });
@@ -731,7 +746,6 @@
                     this.memoryMoves = 0;
                     this.isChecking = false;
 
-                    // Start 25-second preview / memorization phase
                     this.isMemorizing = true;
                     this.memorizeCountdown = 25;
 
@@ -747,12 +761,10 @@
                     if (this.memorizeTimer) clearInterval(this.memorizeTimer);
                     this.isMemorizing = false;
                     
-                    // Turn all unmatched cards face down
                     this.memoryCards.forEach(c => {
                         if (!c.matched) c.flipped = false;
                     });
 
-                    // Start gameplay sprint timer if enabled
                     if (this.enableSprintTimer) {
                         this.timerInterval = setInterval(() => {
                             if (this.matchedPairs < this.totalPairs) this.sprintSeconds++;
