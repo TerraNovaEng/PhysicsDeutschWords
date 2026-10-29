@@ -167,8 +167,11 @@
                 </div>
 
                 <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3">Action Verbs</h4>
-                    <div class="flex flex-wrap gap-2">
+                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 font-semibold flex justify-between items-center">
+                        <span>Action Verbs</span>
+                        <span class="text-xs text-slate-500 font-mono" x-text="verbsSource"></span>
+                    </h4>
+                    <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
                         <template x-for="item in physicsToolbox.verbs" :key="item">
                             <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
                         </template>
@@ -176,8 +179,11 @@
                 </div>
 
                 <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3">Modifiers & Connectors</h4>
-                    <div class="flex flex-wrap gap-2">
+                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 flex justify-between items-center">
+                        <span>Modifiers & Connectors</span>
+                        <span class="text-xs text-slate-500 font-mono" x-text="modifiersSource"></span>
+                    </h4>
+                    <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
                         <template x-for="item in physicsToolbox.modifiers" :key="item">
                             <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
                         </template>
@@ -185,12 +191,29 @@
                 </div>
             </div>
 
-            <!-- Physics Vocabulary Quick Add -->
+            <!-- Physics Vocabulary Quick Add with Pagination -->
             <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3">Add from physics.json (<span x-text="allFlattenedWords.length"></span> terms)</h4>
-                <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
-                    <template x-for="w in allFlattenedWords" :key="w.num">
-                        <button @click="addToSentence(w.german)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-cyan-200 px-2.5 py-1 rounded-md text-xs transition" x-text="w.german"></button>
+                <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+                    <div class="flex items-center gap-3">
+                        <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider">
+                            Vocabulary Terms (Showing <span x-text="builderPageWords.length"></span>)
+                        </h4>
+                        <!-- Toggle for Article vs No-Article Terms -->
+                        <button @click="useNoArticles = !useNoArticles" class="text-xs px-2.5 py-1 rounded border transition font-mono" :class="useNoArticles ? 'bg-cyan-950 border-cyan-600 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'">
+                            <span x-text="useNoArticles ? 'Mode: noarticle.json' : 'Mode: physics.json'"></span>
+                        </button>
+                    </div>
+                    <!-- Pagination Controls -->
+                    <div class="flex items-center gap-2">
+                        <button @click="prevBuilderPage()" :disabled="builderPageIndex === 0" class="px-2.5 py-1 bg-slate-950 border border-slate-800 disabled:opacity-40 rounded text-xs text-slate-300 hover:border-cyan-500 transition">Prev</button>
+                        <span class="text-xs text-slate-400 font-mono" x-text="(builderPageIndex + 1) + ' / ' + totalBuilderPages"></span>
+                        <button @click="nextBuilderPage()" :disabled="builderPageIndex >= totalBuilderPages - 1" class="px-2.5 py-1 bg-slate-950 border border-slate-800 disabled:opacity-40 rounded text-xs text-slate-300 hover:border-cyan-500 transition">Next</button>
+                    </div>
+                </div>
+
+                <div class="flex flex-wrap gap-2 min-h-[100px] p-1">
+                    <template x-for="w in builderPageWords" :key="w.num">
+                        <button @click="addToSentence(w.german)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-cyan-200 px-2.5 py-1.5 rounded-md text-xs transition" x-text="w.german"></button>
                     </template>
                 </div>
             </div>
@@ -280,18 +303,30 @@
                 </div>
             </template>
 
+            <!-- Memory Game Cards Grid with Color Coding -->
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 <template x-for="card in memoryCards" :key="card.id">
                     <div @click="flipCard(card)" 
-                         class="h-28 bg-slate-900 border-2 rounded-xl flex items-center justify-center p-3 text-center transition transform duration-300 select-none shadow-md"
+                         class="h-28 border-2 rounded-xl flex flex-col items-center justify-center p-3 text-center transition transform duration-300 select-none shadow-md relative"
                          :class="{
                           'cursor-not-allowed border-cyan-500 bg-slate-950 text-cyan-200': isMemorizing,
-                          'border-slate-800 hover:border-cyan-500 bg-slate-900 cursor-pointer': !card.flipped && !card.matched && !isMemorizing,
-                          'border-cyan-500 bg-slate-950 text-white scale-105 cursor-default': card.flipped && !card.matched && !isMemorizing,
+                          'border-slate-800 bg-slate-900 hover:border-cyan-500 cursor-pointer': !card.flipped && !card.matched && !isMemorizing,
+                          'border-cyan-500 bg-slate-950 text-cyan-300 scale-105 cursor-default': card.flipped && !card.matched && !isMemorizing && card.type === 'de',
+                          'border-indigo-500 bg-indigo-950/80 text-indigo-200 scale-105 cursor-default': card.flipped && !card.matched && !isMemorizing && card.type === 'en',
                           'border-emerald-600 bg-emerald-950/40 text-emerald-300 opacity-80 cursor-default': card.matched
                          }">
+                        <!-- Face Down State -->
                         <div x-show="!card.flipped && !card.matched" class="text-slate-600 font-bold text-xl">#</div>
-                        <div x-show="card.flipped || card.matched" class="text-xs sm:text-sm font-semibold" x-text="card.text"></div>
+                        
+                        <!-- Face Up State -->
+                        <template x-if="card.flipped || card.matched">
+                            <div class="w-full flex flex-col items-center justify-center">
+                                <span class="text-[10px] font-mono tracking-wider uppercase mb-1 opacity-70"
+                                      :class="card.type === 'de' ? 'text-cyan-400' : 'text-indigo-400'"
+                                      x-text="card.type === 'de' ? '🇩🇪 GERMAN' : '🇬🇧 ENGLISH'"></span>
+                                <div class="text-xs sm:text-sm font-semibold" x-text="card.text"></div>
+                            </div>
+                        </template>
                     </div>
                 </template>
             </div>
@@ -420,7 +455,7 @@
                     </div>
                 </div>
 
-                <!-- NEW: Apogee & Feasibility Explanation Card -->
+                <!-- Explanation Card -->
                 <div class="mt-8 p-5 bg-slate-950 rounded-xl border border-slate-800">
                     <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3">How Do We Know If It Reaches Target Altitude? / Wie prüfen wir die Zielhöhe?</h4>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
@@ -480,9 +515,19 @@
                 currentCardIndex: 0,
                 flipped: false,
                 sections: [],
+                noArticleSections: [],
+                useNoArticles: false,
                 dataSource: 'Loading...',
                 starredWords: JSON.parse(localStorage.getItem('starred_physics') || '[]'),
                 showStarredOnly: false,
+
+                // Builder Pagination State (25–30 terms per page)
+                builderPageIndex: 0,
+                builderPageSize: 28,
+
+                // External JSON Data Sources for Verbs & Modifiers
+                verbsSource: 'Fallback',
+                modifiersSource: 'Fallback',
 
                 // Rocket Lab Simulator State
                 rocket: {
@@ -490,7 +535,7 @@
                     length: 750,        // mm
                     velocity: 120,      // m/s
                     targetAltitude: 500,// m
-                    impulse: 160,       // Ns (e.g. F39 motor range)
+                    impulse: 160,       // Ns
                     mass: 450           // g
                 },
 
@@ -526,19 +571,13 @@
                 memorizeTimer: null,
 
                 async initData() {
+                    // 1. Fetch physics.json (With Articles)
                     try {
                         let response = await fetch('physics.json');
                         if (!response.ok) throw new Error('File not found');
                         let data = await response.json();
-                        
-                        if (Array.isArray(data)) {
-                            this.sections = data;
-                        } else if (data.sections) {
-                            this.sections = data.sections;
-                        } else {
-                            this.sections = this.formatRawWordsToSections(data);
-                        }
-                        this.dataSource = 'physics.json (External File)';
+                        this.sections = Array.isArray(data) ? data : (data.sections ? data.sections : this.formatRawWordsToSections(data));
+                        this.dataSource = 'physics.json';
                     } catch (e) {
                         const fallbackPhysics = {
                             "1": { "german": "die Kraft", "english": "Force" },
@@ -548,8 +587,39 @@
                             "5": { "german": "der Luftwiderstand", "english": "Drag / air resistance" }
                         };
                         this.sections = this.formatRawWordsToSections(fallbackPhysics);
-                        this.dataSource = 'Hardcoded Fallback Array';
+                        this.dataSource = 'Hardcoded Fallback';
                     }
+
+                    // 2. Fetch noarticle.json (Without Articles)
+                    try {
+                        let resNoArt = await fetch('noarticle.json');
+                        if (resNoArt.ok) {
+                            let dataNoArt = await resNoArt.json();
+                            this.noArticleSections = Array.isArray(dataNoArt) ? dataNoArt : (dataNoArt.sections ? dataNoArt.sections : this.formatRawWordsToSections(dataNoArt));
+                        }
+                    } catch (e) {
+                        this.noArticleSections = [];
+                    }
+
+                    // 3. Fetch verbs.json
+                    try {
+                        let resVerbs = await fetch('verbs.json');
+                        if (resVerbs.ok) {
+                            let verbsData = await resVerbs.json();
+                            this.physicsToolbox.verbs = Array.isArray(verbsData) ? verbsData : Object.values(verbsData);
+                            this.verbsSource = 'verbs.json';
+                        }
+                    } catch (e) {}
+
+                    // 4. Fetch modifiers.json
+                    try {
+                        let resMod = await fetch('modifiers.json');
+                        if (resMod.ok) {
+                            let modData = await resMod.json();
+                            this.physicsToolbox.modifiers = Array.isArray(modData) ? modData : Object.values(modData);
+                            this.modifiersSource = 'modifiers.json';
+                        }
+                    } catch (e) {}
                 },
 
                 formatRawWordsToSections(rawObj) {
@@ -574,10 +644,132 @@
                     return chunks;
                 },
 
-                // Rocket Simulator Computed Properties
-                get airDensity() {
-                    return 1.225;
+                // Sentence Builder Array Operations
+                addToSentence(word) {
+                    this.builtSentence = [...this.builtSentence, word];
+                    this.feedback = null;
                 },
+
+                removeFromSentence(index) {
+                    this.builtSentence = this.builtSentence.filter((_, i) => i !== index);
+                    this.feedback = null;
+                },
+
+                get activeSections() {
+                    return (this.useNoArticles && this.noArticleSections.length > 0) ? this.noArticleSections : this.sections;
+                },
+
+                get activeFlattenedWords() {
+                    let list = [];
+                    this.activeSections.forEach(sec => {
+                        sec.words.forEach(w => {
+                            list.push({ ...w, sectionName: sec.name });
+                        });
+                    });
+                    return list;
+                },
+
+                // Builder Vocabulary Pagination (25 to 30 words per page)
+                get totalBuilderPages() {
+                    return Math.ceil(this.activeFlattenedWords.length / this.builderPageSize) || 1;
+                },
+
+                get builderPageWords() {
+                    let start = this.builderPageIndex * this.builderPageSize;
+                    return this.activeFlattenedWords.slice(start, start + this.builderPageSize);
+                },
+
+                nextBuilderPage() {
+                    if (this.builderPageIndex < this.totalBuilderPages - 1) {
+                        this.builderPageIndex++;
+                    }
+                },
+
+                prevBuilderPage() {
+                    if (this.builderPageIndex > 0) {
+                        this.builderPageIndex--;
+                    }
+                },
+
+                // Memory Match Game with Distinct Colors for DE and EN Cards
+                initMemoryGame() {
+                    if (this.timerInterval) clearInterval(this.timerInterval);
+                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
+
+                    this.sprintSeconds = 0;
+                    let allWords = [...this.allFlattenedWords];
+                    allWords.sort(() => Math.random() - 0.5);
+                    this.totalPairs = Math.min(this.memoryPairCount, allWords.length);
+                    let selectedWords = allWords.slice(0, this.totalPairs);
+                    let cards = [];
+                    selectedWords.forEach((word, index) => {
+                        // Type 'de' = German Card (Cyan-themed), Type 'en' = English Card (Indigo-themed)
+                        cards.push({ id: 'g_' + index, pairId: index, text: word.german, type: 'de', flipped: true, matched: false });
+                        cards.push({ id: 'm_' + index, pairId: index, text: word.meaning, type: 'en', flipped: true, matched: false });
+                    });
+                    this.memoryCards = cards.sort(() => Math.random() - 0.5);
+                    this.flippedCards = [];
+                    this.matchedPairs = 0;
+                    this.memoryMoves = 0;
+                    this.isChecking = false;
+
+                    // Start 25-second preview / memorization phase
+                    this.isMemorizing = true;
+                    this.memorizeCountdown = 25;
+
+                    this.memorizeTimer = setInterval(() => {
+                        this.memorizeCountdown--;
+                        if (this.memorizeCountdown <= 0) {
+                            this.startMatchingNow();
+                        }
+                    }, 1000);
+                },
+
+                startMatchingNow() {
+                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
+                    this.isMemorizing = false;
+                    
+                    // Turn all unmatched cards face down
+                    this.memoryCards.forEach(c => {
+                        if (!c.matched) c.flipped = false;
+                    });
+
+                    // Start gameplay sprint timer if enabled
+                    if (this.enableSprintTimer) {
+                        this.timerInterval = setInterval(() => {
+                            if (this.matchedPairs < this.totalPairs) this.sprintSeconds++;
+                        }, 1000);
+                    }
+                },
+
+                flipCard(card) {
+                    if (this.isMemorizing || this.isChecking || card.flipped || card.matched) return;
+                    card.flipped = true;
+                    this.flippedCards = [...this.flippedCards, card];
+                    if (this.flippedCards.length === 2) {
+                        this.memoryMoves++;
+                        this.isChecking = true;
+                        let [card1, card2] = this.flippedCards;
+                        if (card1.pairId === card2.pairId && card1.id !== card2.id) {
+                            card1.matched = true;
+                            card2.matched = true;
+                            this.matchedPairs++;
+                            this.flippedCards = [];
+                            this.isChecking = false;
+                            if (this.matchedPairs === this.totalPairs && this.timerInterval) clearInterval(this.timerInterval);
+                        } else {
+                            setTimeout(() => {
+                                card1.flipped = false;
+                                card2.flipped = false;
+                                this.flippedCards = [];
+                                this.isChecking = false;
+                            }, 900);
+                        }
+                    }
+                },
+
+                // Rocket Simulator Computed Properties
+                get airDensity() { return 1.225; },
 
                 get reynoldsNumber() {
                     let rho = 1.225;
@@ -653,19 +845,9 @@
                     if (this.starredWords.includes(num)) {
                         this.starredWords = this.starredWords.filter(n => n !== num);
                     } else {
-                        this.starredWords.push(num);
+                        this.starredWords = [...this.starredWords, num];
                     }
                     localStorage.setItem('starred_physics', JSON.stringify(this.starredWords));
-                },
-
-                addToSentence(word) {
-                    this.builtSentence.push(word);
-                    this.feedback = null;
-                },
-
-                removeFromSentence(index) {
-                    this.builtSentence.splice(index, 1);
-                    this.feedback = null;
                 },
 
                 get builtSentenceText() {
@@ -782,81 +964,6 @@
                     }
                     this.quizIndex++;
                     this.loadQuizQuestion();
-                },
-
-                initMemoryGame() {
-                    if (this.timerInterval) clearInterval(this.timerInterval);
-                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
-
-                    this.sprintSeconds = 0;
-                    let allWords = [...this.allFlattenedWords];
-                    allWords.sort(() => Math.random() - 0.5);
-                    this.totalPairs = Math.min(this.memoryPairCount, allWords.length);
-                    let selectedWords = allWords.slice(0, this.totalPairs);
-                    let cards = [];
-                    selectedWords.forEach((word, index) => {
-                        cards.push({ id: 'g_' + index, pairId: index, text: word.german, flipped: true, matched: false });
-                        cards.push({ id: 'm_' + index, pairId: index, text: word.meaning, flipped: true, matched: false });
-                    });
-                    this.memoryCards = cards.sort(() => Math.random() - 0.5);
-                    this.flippedCards = [];
-                    this.matchedPairs = 0;
-                    this.memoryMoves = 0;
-                    this.isChecking = false;
-
-                    // Start 25-second preview / memorization phase
-                    this.isMemorizing = true;
-                    this.memorizeCountdown = 25;
-
-                    this.memorizeTimer = setInterval(() => {
-                        this.memorizeCountdown--;
-                        if (this.memorizeCountdown <= 0) {
-                            this.startMatchingNow();
-                        }
-                    }, 1000);
-                },
-
-                startMatchingNow() {
-                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
-                    this.isMemorizing = false;
-                    
-                    // Turn all unmatched cards face down
-                    this.memoryCards.forEach(c => {
-                        if (!c.matched) c.flipped = false;
-                    });
-
-                    // Start gameplay sprint timer if enabled
-                    if (this.enableSprintTimer) {
-                        this.timerInterval = setInterval(() => {
-                            if (this.matchedPairs < this.totalPairs) this.sprintSeconds++;
-                        }, 1000);
-                    }
-                },
-
-                flipCard(card) {
-                    if (this.isMemorizing || this.isChecking || card.flipped || card.matched) return;
-                    card.flipped = true;
-                    this.flippedCards.push(card);
-                    if (this.flippedCards.length === 2) {
-                        this.memoryMoves++;
-                        this.isChecking = true;
-                        let [card1, card2] = this.flippedCards;
-                        if (card1.pairId === card2.pairId && card1.id !== card2.id) {
-                            card1.matched = true;
-                            card2.matched = true;
-                            this.matchedPairs++;
-                            this.flippedCards = [];
-                            this.isChecking = false;
-                            if (this.matchedPairs === this.totalPairs && this.timerInterval) clearInterval(this.timerInterval);
-                        } else {
-                            setTimeout(() => {
-                                card1.flipped = false;
-                                card2.flipped = false;
-                                this.flippedCards = [];
-                                this.isChecking = false;
-                            }, 900);
-                        }
-                    }
                 }
             }
         }
