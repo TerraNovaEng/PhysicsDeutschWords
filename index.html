@@ -505,7 +505,7 @@
         TerraNova Engineering Lab &bull; Physics & Aerospace Vocabulary Workshop
     </footer>
 
-    <!-- JavaScript Data and Application Logic -->
+ <!-- JavaScript Data and Application Logic -->
     <script>
         function physicsApp() {
             return {
@@ -571,6 +571,21 @@
                 memorizeTimer: null,
 
                 async initData() {
+                    // Helper function to extract string values cleanly regardless of JSON shape
+                    const extractWords = (data) => {
+                        if (Array.isArray(data)) return data;
+                        if (typeof data === 'object' && data !== null) {
+                            return Object.values(data).map(item => {
+                                if (typeof item === 'string') return item;
+                                if (typeof item === 'object' && item !== null) {
+                                    return item.german || item.deutsch || item.word || item.text || item.english || JSON.stringify(item);
+                                }
+                                return String(item);
+                            });
+                        }
+                        return [];
+                    };
+
                     // 1. Fetch physics.json (With Articles)
                     try {
                         let response = await fetch('physics.json');
@@ -606,7 +621,7 @@
                         let resVerbs = await fetch('verbs.json');
                         if (resVerbs.ok) {
                             let verbsData = await resVerbs.json();
-                            this.physicsToolbox.verbs = Array.isArray(verbsData) ? verbsData : Object.values(verbsData);
+                            this.physicsToolbox.verbs = extractWords(verbsData);
                             this.verbsSource = 'verbs.json';
                         }
                     } catch (e) {}
@@ -616,7 +631,7 @@
                         let resMod = await fetch('modifiers.json');
                         if (resMod.ok) {
                             let modData = await resMod.json();
-                            this.physicsToolbox.modifiers = Array.isArray(modData) ? modData : Object.values(modData);
+                            this.physicsToolbox.modifiers = extractWords(modData);
                             this.modifiersSource = 'modifiers.json';
                         }
                     } catch (e) {}
@@ -689,7 +704,10 @@
                     if (this.builderPageIndex > 0) {
                         this.builderPageIndex--;
                     }
-                },
+                }
+            }
+        }
+    </script>
 
                 // Memory Match Game with Distinct Colors for DE and EN Cards
                 initMemoryGame() {
