@@ -56,8 +56,8 @@
             </button>
             <div class="md:w-64">
                 <select x-model="selectedSection" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition">
-                    <option value="all">All Sections (<span x-text="allFlattenedWords.length"></span> terms)</option>
-                    <template x-for="sec in sections" :key="sec.id">
+                    <option value="all">All Sections (<span x-text="activeFlattenedWords.length"></span> terms)</option>
+                    <template x-for="sec in activeSections" :key="sec.id">
                         <option :value="sec.id" x-text="sec.name"></option>
                     </template>
                 </select>
@@ -157,33 +157,46 @@
 
             <!-- Physics Toolbox Toolbar -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3">Pronouns & Articles</h4>
-                    <div class="flex flex-wrap gap-2">
-                        <template x-for="item in physicsToolbox.pronouns" :key="item">
-                            <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
-                        </template>
+                <!-- Pronouns & Articles Panel with Pagination -->
+                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg flex flex-col justify-between">
+                    <div>
+                        <div class="flex justify-between items-center mb-3">
+                            <h4 class="font-bold text-cyan-400 text-xs uppercase tracking-wider">Pronouns & Articles</h4>
+                            <span class="text-[10px] text-slate-500 font-mono" x-text="pronounsSource"></span>
+                        </div>
+                        <div class="flex flex-wrap gap-2 max-h-40 overflow-y-auto p-1">
+                            <template x-for="item in pronounPageItems" :key="item">
+                                <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-2.5 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
+                            </template>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center mt-3 pt-2 border-t border-slate-800/80 text-xs">
+                        <button @click="prevPronounPage()" :disabled="pronounPageIndex === 0" class="px-2 py-1 bg-slate-950 border border-slate-800 disabled:opacity-30 rounded text-[11px] text-slate-300 hover:border-cyan-500 transition">Prev</button>
+                        <span class="text-[10px] text-slate-400 font-mono" x-text="(pronounPageIndex + 1) + ' / ' + totalPronounPages"></span>
+                        <button @click="nextPronounPage()" :disabled="pronounPageIndex >= totalPronounPages - 1" class="px-2 py-1 bg-slate-950 border border-slate-800 disabled:opacity-30 rounded text-[11px] text-slate-300 hover:border-cyan-500 transition">Next</button>
                     </div>
                 </div>
 
+                <!-- Action Verbs Panel -->
                 <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 font-semibold flex justify-between items-center">
+                    <h4 class="font-bold text-cyan-400 text-xs uppercase tracking-wider mb-3 flex justify-between items-center">
                         <span>Action Verbs</span>
-                        <span class="text-xs text-slate-500 font-mono" x-text="verbsSource"></span>
+                        <span class="text-[10px] text-slate-500 font-mono" x-text="verbsSource"></span>
                     </h4>
-                    <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
+                    <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
                         <template x-for="item in physicsToolbox.verbs" :key="item">
                             <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
                         </template>
                     </div>
                 </div>
 
+                <!-- Modifiers & Connectors Panel -->
                 <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 flex justify-between items-center">
+                    <h4 class="font-bold text-cyan-400 text-xs uppercase tracking-wider mb-3 flex justify-between items-center">
                         <span>Modifiers & Connectors</span>
-                        <span class="text-xs text-slate-500 font-mono" x-text="modifiersSource"></span>
+                        <span class="text-[10px] text-slate-500 font-mono" x-text="modifiersSource"></span>
                     </h4>
-                    <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
+                    <div class="flex flex-wrap gap-2 max-h-48 overflow-y-auto p-1">
                         <template x-for="item in physicsToolbox.modifiers" :key="item">
                             <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
                         </template>
@@ -199,7 +212,7 @@
                             Vocabulary Terms (Showing <span x-text="builderPageWords.length"></span>)
                         </h4>
                         <!-- Toggle for Article vs No-Article Terms -->
-                        <button @click="useNoArticles = !useNoArticles" class="text-xs px-2.5 py-1 rounded border transition font-mono" :class="useNoArticles ? 'bg-cyan-950 border-cyan-600 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'">
+                        <button @click="toggleVocabularyMode()" class="text-xs px-2.5 py-1 rounded border transition font-mono" :class="useNoArticles ? 'bg-cyan-950 border-cyan-600 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'">
                             <span x-text="useNoArticles ? 'Mode: noarticle.json' : 'Mode: physics.json'"></span>
                         </button>
                     </div>
@@ -505,7 +518,7 @@
         TerraNova Engineering Lab &bull; Physics & Aerospace Vocabulary Workshop
     </footer>
 
- <!-- JavaScript Data and Application Logic -->
+    <!-- JavaScript Data and Application Logic -->
     <script>
         function physicsApp() {
             return {
@@ -521,13 +534,19 @@
                 starredWords: JSON.parse(localStorage.getItem('starred_physics') || '[]'),
                 showStarredOnly: false,
 
-                // Builder Pagination State (25–30 terms per page)
+                // Vocabulary Terms Builder Pagination State (28 terms per page)
                 builderPageIndex: 0,
                 builderPageSize: 28,
 
-                // External JSON Data Sources for Verbs & Modifiers
-                verbsSource: 'Fallback',
-                modifiersSource: 'Fallback',
+                // Pronouns Pagination State (12 terms per page)
+                pronounPageIndex: 0,
+                pronounPageSize: 12,
+
+                // External Data Sources Status Labels
+                verbsSource: 'Loading...',
+                modifiersSource: 'Loading...',
+                noArticleSource: 'Loading...',
+                pronounsSource: 'Loading...',
 
                 // Rocket Lab Simulator State
                 rocket: {
@@ -541,10 +560,12 @@
 
                 builtSentence: [],
                 feedback: null,
+
+                // Dedicated Toolboxes for Each JSON Resource
                 physicsToolbox: {
-                    pronouns: ['die Rakete', 'der Motor', 'der Körper', 'wir', 'es', 'der Wind'],
-                    verbs: ['erzeugt', 'beschleunigt', 'wirkt', 'fliegt', 'steigt', 'sinkt', 'stabilisiert'],
-                    modifiers: ['schnell', 'hoch', 'nach oben', 'gegen', 'mit', 'durch', 'maximal']
+                    pronouns: [],     // Loaded from pronouns.json / pronounsandarticles.json
+                    verbs: [],        // Loaded from verbs.json
+                    modifiers: []     // Loaded from modifiers.json
                 },
                 
                 quizIndex: 0,
@@ -571,14 +592,16 @@
                 memorizeTimer: null,
 
                 async initData() {
-                    // Helper function to extract string values cleanly regardless of JSON shape
-                    const extractWords = (data) => {
-                        if (Array.isArray(data)) return data;
+                    // Universal String Extraction Helper
+                    const extractStrings = (data) => {
+                        if (Array.isArray(data)) {
+                            return data.map(item => (typeof item === 'object' && item !== null) ? (item.german || item.deutsch || item.word || item.text || item.english) : String(item));
+                        }
                         if (typeof data === 'object' && data !== null) {
                             return Object.values(data).map(item => {
                                 if (typeof item === 'string') return item;
                                 if (typeof item === 'object' && item !== null) {
-                                    return item.german || item.deutsch || item.word || item.text || item.english || JSON.stringify(item);
+                                    return item.german || item.deutsch || item.word || item.text || item.english || String(item);
                                 }
                                 return String(item);
                             });
@@ -586,7 +609,94 @@
                         return [];
                     };
 
-                    // 1. Fetch physics.json (With Articles)
+                    // Default Fallback Array of 200 Pronouns and Articles
+                    const fallbackPronouns = [
+                        "der", "die", "das", "den", "dem", "des", "ein", "eine", "einen", "einem", "einer", "eines",
+                        "kein", "keine", "keinen", "keinem", "keiner", "keines", "ich", "du", "er", "sie", "es", "wir",
+                        "ihr", "Sie", "mich", "dich", "ihn", "uns", "euch", "mir", "dir", "ihm", "ihnen", "Ihnen",
+                        "mein", "meine", "meinen", "meinem", "meiner", "meines", "dein", "deine", "deinen", "deinem", "deiner", "deines",
+                        "sein", "seine", "seinen", "seinem", "seiner", "seines", "ihr", "ihre", "ihren", "ihrem", "ihrer", "ihres",
+                        "unser", "unsere", "unseren", "unserem", "unserer", "unseres", "euer", "eure", "euren", "eurem", "eurer", "eures",
+                        "Ihr", "Ihre", "Ihren", "Ihrem", "Ihrer", "Ihres", "dieser", "diese", "dieses", "diesen", "diesem", "jener",
+                        "jene", "jenes", "jenen", "jenem", "jener", "jeder", "jede", "jedes", "jeden", "jedem", "welcher", "welche",
+                        "welches", "welchen", "welchem", "welcher", "solcher", "solche", "solches", "solchen", "solchem", "mancher",
+                        "manche", "manches", "manchen", "manchem", "mancher", "alle", "aller", "allen", "allem", "alles", "beide",
+                        "beider", "beiden", "beidem", "einige", "einiger", "einigen", "einiges", "etliche", "etlicher", "etlichen",
+                        "etliches", "mehrere", "mehrerer", "mehreren", "viele", "vieler", "vielen", "vieles", "wenige", "weniger",
+                        "wenigen", "weniges", "wer", "wen", "wem", "wessen", "was", "jemand", "jemanden", "jemandem", "niemals",
+                        "niemand", "niemanden", "niemandem", "etwas", "nichts", "man", "einer", "eine", "eines", "einen", "einem",
+                        "keiner", "keines", "selbst", "selber", "einander", "sich", "derselbe", "dieselbe", "dasselbe", "dieselbelben",
+                        "derselben", "demselben", "denselben", "derjenige", "diejenige", "dasjenige", "diejenigen", "desjenigen",
+                        "demjenigen", "denjenigen", "derer", "deren", "dessen", "irgendein", "irgendeine", "irgendeinen", "irgendeinem",
+                        "irgendeiner", "irgendeines", "irgendwelche", "irgendwelcher", "irgendwelchen", "irgendwas", "irgendwer",
+                        "irgendwen", "irgendwem", "irgendwessen", "sämtliche", "sämtlicher", "sämtlichen", "sämtliches"
+                    ];
+
+                    // Built-in Fallback for Vocabulary Terms with Articles (physics.json)
+                    const fallbackPhysics = {
+                        "1": { "german": "die Kraft", "english": "Force" },
+                        "2": { "german": "die Masse", "english": "Mass" },
+                        "3": { "german": "die Beschleunigung", "english": "Acceleration" },
+                        "4": { "german": "der Schub", "english": "Thrust" },
+                        "5": { "german": "der Luftwiderstand", "english": "Drag / air resistance" },
+                        "6": { "german": "die Schwerkraft", "english": "Gravity" },
+                        "7": { "german": "die Aerodynamik", "english": "Aerodynamics" },
+                        "8": { "german": "die Rakete", "english": "Rocket" },
+                        "9": { "german": "der Impuls", "english": "Momentum" },
+                        "10": { "german": "die Geschwindigkeit", "english": "Velocity" },
+                        "11": { "german": "die Umlaufbahn", "english": "Orbit" },
+                        "12": { "german": "die Stufe", "english": "Stage" },
+                        "13": { "german": "der Treibstoff", "english": "Propellant / Fuel" },
+                        "14": { "german": "die Düse", "english": "Nozzle" },
+                        "15": { "german": "der Druck", "english": "Pressure" },
+                        "16": { "german": "die Reibung", "english": "Friction" },
+                        "17": { "german": "die Dichte", "english": "Density" },
+                        "18": { "german": "die Viskosität", "english": "Viscosity" },
+                        "19": { "german": "die Strömung", "english": "Flow / Current" },
+                        "20": { "german": "die Turbulenz", "english": "Turbulence" },
+                        "21": { "german": "der Auftrieb", "english": "Lift" },
+                        "22": { "german": "die Trägheit", "english": "Inertia" },
+                        "23": { "german": "die Energie", "english": "Energy" },
+                        "24": { "german": "die Leistung", "english": "Power" },
+                        "25": { "german": "die Arbeit", "english": "Work" },
+                        "26": { "german": "die Frequenz", "english": "Frequency" },
+                        "27": { "german": "die Schwingung", "english": "Oscillation" },
+                        "28": { "german": "die Welle", "english": "Wave" }
+                    };
+
+                    // Built-in Fallback for Vocabulary Terms without Articles (noarticle.json)
+                    const fallbackNoArticle = {
+                        "1": { "german": "Kraft", "english": "Force" },
+                        "2": { "german": "Masse", "english": "Mass" },
+                        "3": { "german": "Beschleunigung", "english": "Acceleration" },
+                        "4": { "german": "Schub", "english": "Thrust" },
+                        "5": { "german": "Luftwiderstand", "english": "Drag" },
+                        "6": { "german": "Schwerkraft", "english": "Gravity" },
+                        "7": { "german": "Aerodynamik", "english": "Aerodynamics" },
+                        "8": { "german": "Rakete", "english": "Rocket" },
+                        "9": { "german": "Impuls", "english": "Momentum" },
+                        "10": { "german": "Geschwindigkeit", "english": "Velocity" },
+                        "11": { "german": "Umlaufbahn", "english": "Orbit" },
+                        "12": { "german": "Stufe", "english": "Stage" },
+                        "13": { "german": "Treibstoff", "english": "Fuel" },
+                        "14": { "german": "Düse", "english": "Nozzle" },
+                        "15": { "german": "Druck", "english": "Pressure" },
+                        "16": { "german": "Reibung", "english": "Friction" },
+                        "17": { "german": "Dichte", "english": "Density" },
+                        "18": { "german": "Viskosität", "english": "Viscosity" },
+                        "19": { "german": "Strömung", "english": "Flow" },
+                        "20": { "german": "Turbulenz", "english": "Turbulence" },
+                        "21": { "german": "Auftrieb", "english": "Lift" },
+                        "22": { "german": "Trägheit", "english": "Inertia" },
+                        "23": { "german": "Energie", "english": "Energy" },
+                        "24": { "german": "Leistung", "english": "Power" },
+                        "25": { "german": "Arbeit", "english": "Work" },
+                        "26": { "german": "Frequenz", "english": "Frequency" },
+                        "27": { "german": "Schwingung", "english": "Oscillation" },
+                        "28": { "german": "Welle", "english": "Wave" }
+                    };
+
+                    // 1. Fetch Vocabulary Terms with Articles -> physics.json
                     try {
                         let response = await fetch('physics.json');
                         if (!response.ok) throw new Error('File not found');
@@ -594,57 +704,80 @@
                         this.sections = Array.isArray(data) ? data : (data.sections ? data.sections : this.formatRawWordsToSections(data));
                         this.dataSource = 'physics.json';
                     } catch (e) {
-                        const fallbackPhysics = {
-                            "1": { "german": "die Kraft", "english": "Force" },
-                            "2": { "german": "die Masse", "english": "Mass" },
-                            "3": { "german": "die Beschleunigung", "english": "Acceleration" },
-                            "4": { "german": "der Schub", "english": "Thrust" },
-                            "5": { "german": "der Luftwiderstand", "english": "Drag / air resistance" }
-                        };
                         this.sections = this.formatRawWordsToSections(fallbackPhysics);
                         this.dataSource = 'Hardcoded Fallback';
                     }
 
-                    // 2. Fetch noarticle.json (Without Articles)
+                    // 2. Fetch Vocabulary Terms without Articles -> noarticle.json
                     try {
                         let resNoArt = await fetch('noarticle.json');
                         if (resNoArt.ok) {
                             let dataNoArt = await resNoArt.json();
                             this.noArticleSections = Array.isArray(dataNoArt) ? dataNoArt : (dataNoArt.sections ? dataNoArt.sections : this.formatRawWordsToSections(dataNoArt));
+                            this.noArticleSource = 'noarticle.json';
+                        } else {
+                            throw new Error('noarticle.json not available');
                         }
                     } catch (e) {
-                        this.noArticleSections = [];
+                        this.noArticleSections = this.formatRawWordsToSections(fallbackNoArticle);
+                        this.noArticleSource = 'Fallback';
                     }
 
-                    // 3. Fetch verbs.json
+                    // 3. Fetch Pronouns & Articles -> pronouns.json / pronounsandarticles.json
+                    try {
+                        let resPro = await fetch('pronouns.json');
+                        if (!resPro.ok) resPro = await fetch('pronounsandarticles.json');
+                        if (resPro.ok) {
+                            let proData = await resPro.json();
+                            this.physicsToolbox.pronouns = extractStrings(proData);
+                            this.pronounsSource = 'pronouns.json';
+                        } else {
+                            throw new Error('File not found');
+                        }
+                    } catch (e) {
+                        this.physicsToolbox.pronouns = fallbackPronouns;
+                        this.pronounsSource = 'Fallback';
+                    }
+
+                    // 4. Fetch Action Verbs -> verbs.json
                     try {
                         let resVerbs = await fetch('verbs.json');
                         if (resVerbs.ok) {
                             let verbsData = await resVerbs.json();
-                            this.physicsToolbox.verbs = extractWords(verbsData);
+                            this.physicsToolbox.verbs = extractStrings(verbsData);
                             this.verbsSource = 'verbs.json';
+                        } else {
+                            throw new Error('File not found');
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        this.physicsToolbox.verbs = ['erzeugen', 'wirken', 'fliegen', 'steigen', 'sinken', 'simulieren', 'ausstoßen', 'verbrennen', 'strömen', 'gieren', 'nicken'];
+                        this.verbsSource = 'Fallback';
+                    }
 
-                    // 4. Fetch modifiers.json
+                    // 5. Fetch Modifiers & Connectors -> modifiers.json
                     try {
                         let resMod = await fetch('modifiers.json');
                         if (resMod.ok) {
                             let modData = await resMod.json();
-                            this.physicsToolbox.modifiers = extractWords(modData);
+                            this.physicsToolbox.modifiers = extractStrings(modData);
                             this.modifiersSource = 'modifiers.json';
+                        } else {
+                            throw new Error('File not found');
                         }
-                    } catch (e) {}
+                    } catch (e) {
+                        this.physicsToolbox.modifiers = ['schnell', 'langsam', 'hoch', 'niedrig', 'maximal', 'minimal', 'konstant', 'variabel', 'linear', 'nichtlinear', 'proportional'];
+                        this.modifiersSource = 'Fallback';
+                    }
                 },
 
                 formatRawWordsToSections(rawObj) {
                     let wordKeys = Object.keys(rawObj);
                     let chunks = [];
-                    for (let i = 0; i < wordKeys.length; i += 25) {
-                        let chunkKeys = wordKeys.slice(i, i + 25);
+                    for (let i = 0; i < wordKeys.length; i += 28) {
+                        let chunkKeys = wordKeys.slice(i, i + 28);
                         let chunkWords = chunkKeys.map(k => ({
                             num: parseInt(k),
-                            german: rawObj[k].german || rawObj[k].deutsch,
+                            german: rawObj[k].german || rawObj[k].deutsch || rawObj[k].word,
                             meaning: rawObj[k].english || rawObj[k].meaning,
                             type: 'Term'
                         }));
@@ -659,7 +792,7 @@
                     return chunks;
                 },
 
-                // Sentence Builder Array Operations
+                // Sentence Builder Workspace Array Operations
                 addToSentence(word) {
                     this.builtSentence = [...this.builtSentence, word];
                     this.feedback = null;
@@ -670,6 +803,7 @@
                     this.feedback = null;
                 },
 
+                // Dynamic Vocabulary Selection (physics.json vs noarticle.json)
                 get activeSections() {
                     return (this.useNoArticles && this.noArticleSections.length > 0) ? this.noArticleSections : this.sections;
                 },
@@ -684,7 +818,7 @@
                     return list;
                 },
 
-                // Builder Vocabulary Pagination (25 to 30 words per page)
+                // Vocabulary Terms Pagination Logic
                 get totalBuilderPages() {
                     return Math.ceil(this.activeFlattenedWords.length / this.builderPageSize) || 1;
                 },
@@ -704,12 +838,36 @@
                     if (this.builderPageIndex > 0) {
                         this.builderPageIndex--;
                     }
-                }
-            }
-        }
-    </script>
+                },
 
-                // Memory Match Game with Distinct Colors for DE and EN Cards
+                toggleVocabularyMode() {
+                    this.useNoArticles = !this.useNoArticles;
+                    this.builderPageIndex = 0;
+                },
+
+                // Pronouns Toolbox Pagination Logic
+                get totalPronounPages() {
+                    return Math.ceil(this.physicsToolbox.pronouns.length / this.pronounPageSize) || 1;
+                },
+
+                get pronounPageItems() {
+                    let start = this.pronounPageIndex * this.pronounPageSize;
+                    return this.physicsToolbox.pronouns.slice(start, start + this.pronounPageSize);
+                },
+
+                nextPronounPage() {
+                    if (this.pronounPageIndex < this.totalPronounPages - 1) {
+                        this.pronounPageIndex++;
+                    }
+                },
+
+                prevPronounPage() {
+                    if (this.pronounPageIndex > 0) {
+                        this.pronounPageIndex--;
+                    }
+                },
+
+                // Memory Match Game Logic
                 initMemoryGame() {
                     if (this.timerInterval) clearInterval(this.timerInterval);
                     if (this.memorizeTimer) clearInterval(this.memorizeTimer);
@@ -721,7 +879,6 @@
                     let selectedWords = allWords.slice(0, this.totalPairs);
                     let cards = [];
                     selectedWords.forEach((word, index) => {
-                        // Type 'de' = German Card (Cyan-themed), Type 'en' = English Card (Indigo-themed)
                         cards.push({ id: 'g_' + index, pairId: index, text: word.german, type: 'de', flipped: true, matched: false });
                         cards.push({ id: 'm_' + index, pairId: index, text: word.meaning, type: 'en', flipped: true, matched: false });
                     });
@@ -731,7 +888,6 @@
                     this.memoryMoves = 0;
                     this.isChecking = false;
 
-                    // Start 25-second preview / memorization phase
                     this.isMemorizing = true;
                     this.memorizeCountdown = 25;
 
@@ -747,12 +903,10 @@
                     if (this.memorizeTimer) clearInterval(this.memorizeTimer);
                     this.isMemorizing = false;
                     
-                    // Turn all unmatched cards face down
                     this.memoryCards.forEach(c => {
                         if (!c.matched) c.flipped = false;
                     });
 
-                    // Start gameplay sprint timer if enabled
                     if (this.enableSprintTimer) {
                         this.timerInterval = setInterval(() => {
                             if (this.matchedPairs < this.totalPairs) this.sprintSeconds++;
@@ -896,7 +1050,7 @@
 
                 get filteredSections() {
                     let q = this.searchQuery.toLowerCase();
-                    return this.sections.map(sec => {
+                    return this.activeSections.map(sec => {
                         let filteredWords = sec.words.filter(w => {
                             let matchesSearch = w.german.toLowerCase().includes(q) || 
                                                 w.meaning.toLowerCase().includes(q) || 
@@ -927,64 +1081,4 @@
                     let list = this.filteredWordsList;
                     if (list.length === 0) return { num: 0, german: 'No terms found', meaning: '', type: '', sectionName: '' };
                     if (this.currentCardIndex >= list.length) this.currentCardIndex = 0;
-                    return list[this.currentCardIndex];
-                },
-
-                nextCard() {
-                    this.flipped = false;
-                    let len = this.filteredWordsList.length;
-                    if (len > 0) this.currentCardIndex = (this.currentCardIndex + 1) % len;
-                },
-
-                prevCard() {
-                    this.flipped = false;
-                    let len = this.filteredWordsList.length;
-                    if (len > 0) this.currentCardIndex = (this.currentCardIndex - 1 + len) % len;
-                },
-
-                randomCard() {
-                    let len = this.filteredWordsList.length;
-                    if (len > 1) {
-                        let randomIndex;
-                        do {
-                            randomIndex = Math.floor(Math.random() * len);
-                        } while (randomIndex === this.currentCardIndex);
-                        this.currentCardIndex = randomIndex;
-                    }
-                },
-
-                initQuiz() {
-                    let pool = [...this.allFlattenedWords];
-                    pool.sort(() => Math.random() - 0.5);
-                    this.quizPool = pool.slice(0, 10);
-                    this.quizIndex = 0;
-                    this.quizScore = 0;
-                    this.quizFinished = false;
-                    this.loadQuizQuestion();
-                },
-
-                loadQuizQuestion() {
-                    if (this.quizIndex >= this.quizPool.length) {
-                        this.quizFinished = true;
-                        return;
-                    }
-                    this.currentQuizQuestion = this.quizPool[this.quizIndex];
-                    let correctMeaning = this.currentQuizQuestion.meaning;
-                    let distractors = this.allFlattenedWords.filter(w => w.meaning !== correctMeaning).map(w => w.meaning);
-                    distractors.sort(() => Math.random() - 0.5);
-                    let options = [correctMeaning, ...distractors.slice(0, 3)];
-                    this.currentQuizOptions = options.sort(() => Math.random() - 0.5);
-                },
-
-                answerQuiz(selectedOption) {
-                    if (selectedOption === this.currentQuizQuestion.meaning) {
-                        this.quizScore++;
-                    }
-                    this.quizIndex++;
-                    this.loadQuizQuestion();
-                }
-            }
-        }
-    </script>
-</body>
-</html>
+                    return list
