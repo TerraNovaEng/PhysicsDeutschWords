@@ -237,7 +237,7 @@
                         <span class="text-xs text-slate-400 uppercase tracking-wider block">Moves</span>
                         <span class="text-xl font-bold text-white" x-text="memoryMoves"></span>
                     </div>
-                    <div x-show="enableSprintTimer">
+                    <div x-show="enableSprintTimer && !isMemorizing">
                         <span class="text-xs text-slate-400 uppercase tracking-wider block">Time</span>
                         <span class="text-xl font-bold text-emerald-400" x-text="sprintSeconds + 's'"></span>
                     </div>
@@ -256,7 +256,23 @@
                 </div>
             </div>
 
-            <template x-if="matchedPairs === totalPairs && totalPairs > 0">
+            <!-- Memorization Phase Alert Banner -->
+            <template x-if="isMemorizing">
+                <div class="bg-cyan-950/80 border-2 border-cyan-500 text-cyan-100 p-5 rounded-xl mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-pulse">
+                    <div class="flex items-center gap-3">
+                        <span class="text-3xl">🧠</span>
+                        <div>
+                            <h4 class="font-bold text-base text-cyan-300">Memorization Phase Active</h4>
+                            <p class="text-xs text-cyan-200/90 mt-0.5">You have <span class="font-extrabold text-cyan-400 font-mono text-sm" x-text="memorizeCountdown + 's'"></span> to study the card placements before they flip face down!</p>
+                        </div>
+                    </div>
+                    <button @click="startMatchingNow()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition shadow whitespace-nowrap">
+                        Start Now (Skip Countdown)
+                    </button>
+                </div>
+            </template>
+
+            <template x-if="matchedPairs === totalPairs && totalPairs > 0 && !isMemorizing">
                 <div class="bg-emerald-950/80 border border-emerald-600 text-emerald-100 p-6 rounded-xl text-center mb-6 shadow-lg animate-bounce">
                     <h3 class="text-2xl font-bold mb-1">🎉 Excellent Work!</h3>
                     <p class="text-sm">Matched all physics pairs in <span class="font-bold" x-text="memoryMoves"></span> moves <template x-if="enableSprintTimer"><span>in <span class="font-bold" x-text="sprintSeconds"></span> seconds</span></template>!</p>
@@ -267,10 +283,11 @@
             <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-3">
                 <template x-for="card in memoryCards" :key="card.id">
                     <div @click="flipCard(card)" 
-                         class="h-28 bg-slate-900 border-2 rounded-xl flex items-center justify-center p-3 text-center cursor-pointer transition transform duration-300 select-none shadow-md"
+                         class="h-28 bg-slate-900 border-2 rounded-xl flex items-center justify-center p-3 text-center transition transform duration-300 select-none shadow-md"
                          :class="{
-                          'border-slate-800 hover:border-cyan-500 bg-slate-900': !card.flipped && !card.matched,
-                          'border-cyan-500 bg-slate-950 text-white scale-105': card.flipped && !card.matched,
+                          'cursor-not-allowed border-cyan-500 bg-slate-950 text-cyan-200': isMemorizing,
+                          'border-slate-800 hover:border-cyan-500 bg-slate-900 cursor-pointer': !card.flipped && !card.matched && !isMemorizing,
+                          'border-cyan-500 bg-slate-950 text-white scale-105 cursor-default': card.flipped && !card.matched && !isMemorizing,
                           'border-emerald-600 bg-emerald-950/40 text-emerald-300 opacity-80 cursor-default': card.matched
                          }">
                         <div x-show="!card.flipped && !card.matched" class="text-slate-600 font-bold text-xl">#</div>
@@ -409,7 +426,7 @@
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
                         <div class="space-y-2">
                             <p><strong class="text-white">🇩🇪 Energiebilanz & Verluste:</strong> Um eine Zielhöhe ($h$) zu erreichen, muss die vom Motor gelieferte Energie (Gesamtimpuls) die potentielle Energie ($E_p = m \cdot g \cdot h$) und die aerodynamischen Verluste durch Luftwiderstand ($F_d$) überwinden.</p>
-                            <p><strong class="text-white">Schub-Gewicht-Verhältnis:</strong> Ein Startwert von mindestens 5:1 sorgt dafür, dass die Rakete die Startrampe schnell verlässt, bevor Instabilitàten auftreten.</p>
+                            <p><strong class="text-white">Schub-Gewicht-Verhältnis:</strong> Ein Startwert von mindestens 5:1 sorgt dafür, dass die Rakete die Startrampe schnell verlässt, bevor Instabilitäten auftreten.</p>
                         </div>
                         <div class="space-y-2">
                             <p><strong class="text-white">🇬🇧 Energy Balance & Losses:</strong> To reach a target altitude ($h$), the motor's total impulse energy must overcome potential energy ($E_p = m \cdot g \cdot h$) and aerodynamic drag losses ($F_d$).</p>
@@ -502,6 +519,11 @@
                 enableSprintTimer: false,
                 sprintSeconds: 0,
                 timerInterval: null,
+
+                // Memorization Phase state
+                isMemorizing: false,
+                memorizeCountdown: 25,
+                memorizeTimer: null,
 
                 async initData() {
                     try {
@@ -764,30 +786,55 @@
 
                 initMemoryGame() {
                     if (this.timerInterval) clearInterval(this.timerInterval);
+                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
+
                     this.sprintSeconds = 0;
-                    if (this.enableSprintTimer) {
-                        this.timerInterval = setInterval(() => {
-                            if (this.matchedPairs < this.totalPairs) this.sprintSeconds++;
-                        }, 1000);
-                    }
                     let allWords = [...this.allFlattenedWords];
                     allWords.sort(() => Math.random() - 0.5);
                     this.totalPairs = Math.min(this.memoryPairCount, allWords.length);
                     let selectedWords = allWords.slice(0, this.totalPairs);
                     let cards = [];
                     selectedWords.forEach((word, index) => {
-                        cards.push({ id: 'g_' + index, pairId: index, text: word.german, flipped: false, matched: false });
-                        cards.push({ id: 'm_' + index, pairId: index, text: word.meaning, flipped: false, matched: false });
+                        cards.push({ id: 'g_' + index, pairId: index, text: word.german, flipped: true, matched: false });
+                        cards.push({ id: 'm_' + index, pairId: index, text: word.meaning, flipped: true, matched: false });
                     });
                     this.memoryCards = cards.sort(() => Math.random() - 0.5);
                     this.flippedCards = [];
                     this.matchedPairs = 0;
                     this.memoryMoves = 0;
                     this.isChecking = false;
+
+                    // Start 25-second preview / memorization phase
+                    this.isMemorizing = true;
+                    this.memorizeCountdown = 25;
+
+                    this.memorizeTimer = setInterval(() => {
+                        this.memorizeCountdown--;
+                        if (this.memorizeCountdown <= 0) {
+                            this.startMatchingNow();
+                        }
+                    }, 1000);
+                },
+
+                startMatchingNow() {
+                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
+                    this.isMemorizing = false;
+                    
+                    // Turn all unmatched cards face down
+                    this.memoryCards.forEach(c => {
+                        if (!c.matched) c.flipped = false;
+                    });
+
+                    // Start gameplay sprint timer if enabled
+                    if (this.enableSprintTimer) {
+                        this.timerInterval = setInterval(() => {
+                            if (this.matchedPairs < this.totalPairs) this.sprintSeconds++;
+                        }, 1000);
+                    }
                 },
 
                 flipCard(card) {
-                    if (this.isChecking || card.flipped || card.matched) return;
+                    if (this.isMemorizing || this.isChecking || card.flipped || card.matched) return;
                     card.flipped = true;
                     this.flippedCards.push(card);
                     if (this.flippedCards.length === 2) {
