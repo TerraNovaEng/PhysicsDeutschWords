@@ -6,6 +6,8 @@
     <title>EasySentencesBuilder | TerraNova Engineering Lab</title>
     <!-- Favicon -->
     <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇩🇪</text></svg>">
+    <!--link to manifest.json for offline-->
+    <link rel="manifest" href="manifest.json">
     <!-- PWA Manifest & Theme -->
     <link rel="manifest" href="./manifest.json">
     <meta name="theme-color" content="#2563eb">
@@ -344,5 +346,16 @@
             }
         }
     </script>
+
+
+    <script>
+    if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+            navigator.serviceWorker.register('./sw.js')
+                .then(reg => console.log('ServiceWorker registered successfully:', reg.scope))
+                .catch(err => console.log('ServiceWorker registration failed:', err));
+        });
+    }
+</script>
 </body>
 </html>
