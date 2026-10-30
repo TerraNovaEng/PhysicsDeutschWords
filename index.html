@@ -374,11 +374,9 @@
 
                 async initData() {
                     try {
-                        // Fetch physics.json
                         let resPhysics = await fetch('./physics.json');
                         if (resPhysics.ok) {
                             let data = await resPhysics.json();
-                            // Support array or object section formats
                             if (Array.isArray(data)) {
                                 this.sections = data;
                             } else if (data.sections) {
@@ -388,7 +386,6 @@
                     } catch (e) { console.warn('Could not load physics.json', e); }
 
                     if (this.sections.length === 0) {
-                        // Fallback sections if fetch fails or running locally without server
                         this.sections = [
                             {
                                 id: 'mechanics',
@@ -415,13 +412,11 @@
                         ];
                     }
 
-                    // Flatten physics words for builder & search
                     this.physicsWords = [];
                     this.sections.forEach(sec => {
                         sec.words.forEach(w => this.physicsWords.push(w));
                     });
 
-                    // Fetch verbs.json
                     try {
                         let resVerbs = await fetch('./verbs.json');
                         if (resVerbs.ok) {
@@ -433,7 +428,6 @@
                     }
                     this.physicsToolbox.verbs = this.verbsList;
 
-                    // Fetch modifiers.json
                     try {
                         let resMod = await fetch('./modifiers.json');
                         if (resMod.ok) {
@@ -445,7 +439,6 @@
                     }
                     this.physicsToolbox.modifiers = this.modifiersList;
 
-                    // Fetch pronounsandarticles.json
                     try {
                         let resPron = await fetch('./pronounsandarticles.json');
                         if (resPron.ok) {
@@ -457,7 +450,6 @@
                     }
                     this.physicsToolbox.pronouns = this.pronounsList;
 
-                    // Fetch noarticle.json
                     try {
                         let resNo = await fetch('./noarticle.json');
                         if (resNo.ok) {
@@ -481,6 +473,37 @@
                     return list;
                 },
 
+                get totalFilteredWords() {
+                    return this.allFlattenedWords.length;
+                },
+
+                get currentWord() {
+                    let list = this.allFlattenedWords;
+                    if (list.length === 0) return { num: 0, german: '', meaning: '', sectionName: '' };
+                    if (this.currentCardIndex >= list.length) this.currentCardIndex = 0;
+                    return list[this.currentCardIndex];
+                },
+
+                nextCard() {
+                    let list = this.allFlattenedWords;
+                    if (list.length === 0) return;
+                    this.flipped = false;
+                    this.currentCardIndex = (this.currentCardIndex + 1) % list.length;
+                },
+
+                prevCard() {
+                    let list = this.allFlattenedWords;
+                    if (list.length === 0) return;
+                    this.flipped = false;
+                    this.currentCardIndex = (this.currentCardIndex - 1 + list.length) % list.length;
+                },
+
+                randomCard() {
+                    let list = this.allFlattenedWords;
+                    if (list.length === 0) return;
+                    this.currentCardIndex = Math.floor(Math.random() * list.length);
+                },
+
                 get filteredSections() {
                     let q = this.searchQuery.toLowerCase().trim();
                     return this.sections.map(sec => {
@@ -499,7 +522,6 @@
                     });
                 },
 
-                // Builder Vocabulary List (Filtered by Search and Mode)
                 get activeBuilderSource() {
                     let raw = this.useNoArticles ? this.noArticlesWords : this.physicsWords;
                     let q = this.builderSearchQuery.toLowerCase().trim();
@@ -562,15 +584,89 @@
                     };
                 },
 
+                initQuiz() {
+                    this.quizIndex = 0;
+                    this.quizScore = 0;
+                    this.quizFinished = false;
+                    this.nextQuizQuestion();
+                },
+
+                nextQuizQuestion() {
+                    let words = [...this.allFlattenedWords];
+                    if (words.length === 0) return;
+                    words.sort(() => 0.5 - Math.random());
+                    this.currentQuizQuestion = words[0];
+                    
+                    let wrong = words.slice(1).map(w => w.meaning);
+                    wrong.sort(() => 0.5 - Math.random());
+                    let options = [this.currentQuizQuestion.meaning, ...wrong.slice(0, 3)];
+                    options.sort(() => 0.5 - Math.random());
+                    this.currentQuizOptions = options;
+                },
+
+                answerQuiz(option) {
+                    if (option === this.currentQuizQuestion.meaning) {
+                        this.quizScore++;
+                    }
+                    this.quizIndex++;
+                    if (this.quizIndex >= 10 || this.quizIndex >= this.allFlattenedWords.length) {
+                        this.quizFinished = true;
+                    } else {
+                        this.nextQuizQuestion();
+                    }
+                },
+
+                initMemoryGame() {
+                    this.matchedPairs = 0;
+                    this.memoryMoves = 0;
+                    this.flippedCards = [];
+                    this.totalPairs = Number(this.memoryPairCount) || 6;
+                    
+                    let pool = [...this.allFlattenedWords];
+                    pool.sort(() => 0.5 - Math.random());
+                    let selected = pool.slice(0, this.totalPairs);
+                    
+                    let cards = [];
+                    selected.forEach((item, idx) => {
+                        cards.push({ id: idx * 2, num: item.num, type: 'de', text: item.german, flipped: false, matched: false });
+                        cards.push({ id: idx * 2 + 1, num: item.num, type: 'en', text: item.meaning, flipped: false, matched: false });
+                    });
+                    cards.sort(() => 0.5 - Math.random());
+                    this.memoryCards = cards;
+                },
+
+                flipCard(card) {
+                    if (card.flipped || card.matched || this.flippedCards.length >= 2) return;
+                    card.flipped = true;
+                    this.flippedCards.push(card);
+
+                    if (this.flippedCards.length === 2) {
+                        this.memoryMoves++;
+                        let [c1, c2] = this.flippedCards;
+                        if (c1.num === c2.num && c1.type !== c2.type) {
+                            c1.matched = true;
+                            c2.matched = true;
+                            this.matchedPairs++;
+                            this.flippedCards = [];
+                        } else {
+                            setTimeout(() => {
+                                c1.flipped = false;
+                                c2.flipped = false;
+                                this.flippedCards = [];
+                            }, 1000);
+                        }
+                    }
+                },
+
                 speak(text) {
                     if ('speechSynthesis' in window && text) {
                         let utterance = new SpeechSynthesisUtterance(text);
                         utterance.lang = 'de-DE';
                         window.speechSynthesis.speak(utterance);
-              }
+                    }
                 }
-            } // Closes physicsApp()
-        }     // Closes the return object
+            };
+        }
     </script>
 
     <!-- Register Service Worker for Offline PWA Support -->
