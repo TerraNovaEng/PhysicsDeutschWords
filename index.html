@@ -1,1035 +1,345 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="de" translate="no">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>TerraNova Physics & Rocketry Workshop</title>
-    <!-- Physics & Aerospace Rocket Favicon -->
-    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%23020617'/><path d='M50 15 C65 35 68 60 68 75 L32 75 C32 60 35 35 50 15 Z' fill='%2306b6d4'/><polygon points='32,55 18,75 32,72' fill='%230891b2'/><polygon points='68,55 82,75 68,72' fill='%230891b2'/><circle cx='50' cy='42' r='7' fill='%23020617' stroke='%2338bdf8' stroke-width='2'/><path d='M42 75 Q50 92 58 75' fill='%23f97316'/></svg>">
+    <title>EasySentencesBuilder | TerraNova Engineering Lab</title>
+    <!-- Favicon -->
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🇩🇪</text></svg>">
+    <!-- PWA Manifest & Theme -->
+    <link rel="manifest" href="./manifest.json">
+    <meta name="theme-color" content="#2563eb">
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
-    <style>
-        .perspective { perspective: 1000px; }
-        .transform-style { transform-style: preserve-3d; }
-        .backface-hidden { backface-visibility: hidden; }
-        .rotate-y-180 { transform: rotateY(180deg); }
-    </style>
 </head>
-<body class="bg-slate-950 text-slate-100 min-h-screen font-sans" x-data="physicsApp()" x-init="initData()">
+<body class="bg-slate-900 text-slate-100 min-h-screen font-sans" x-data="sentenceBuilderApp()" x-init="initData()">
+    <span lang="de" class="notranslate" translate="no">EasySentencesBuilder</span>
 
     <!-- Header -->
-    <header class="bg-slate-900 border-b border-cyan-900/50 py-6 px-4 sm:px-8 shadow-md">
+    <header class="bg-slate-800 border-b border-slate-700 py-6 px-6 shadow-xl">
         <div class="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-4">
             <div>
-                <span class="text-xs uppercase tracking-widest text-cyan-400 font-semibold">TerraNova Engineering Lab</span>
-                <h1 class="text-2xl sm:text-3xl font-bold text-white mt-1">Aerospace & Physics Vocabulary</h1>
-                <div class="flex items-center gap-3 mt-1">
-                    <p class="text-slate-400 text-sm">Mechanics, Aerodynamics, Rocketry & Flight Dynamics.</p>
-                    <span class="text-xs px-2.5 py-0.5 rounded bg-slate-950 border border-slate-800 text-cyan-300 font-mono" x-text="'Source: ' + dataSource"></span>
-                </div>
+                <span class="text-xs uppercase tracking-widest text-purple-300 font-semibold">TerraNova Engineering Lab</span>
+                <h1 class="text-3xl font-extrabold text-white mt-1">EasySentencesBuilder 🇩🇪</h1>
+                <p class="text-slate-400 text-sm mt-1">Interaktiver deutscher Satzbaukasten mit integrierter Grammatikprüfung.</p>
             </div>
-            <!-- View Mode Switcher -->
-            <div class="flex flex-wrap bg-slate-950 p-1 rounded-lg border border-slate-800">
-                <button @click="viewMode = 'list'" :class="viewMode === 'list' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">List</button>
-                <button @click="viewMode = 'cards'" :class="viewMode === 'cards' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Flashcards</button>
-                <button @click="viewMode = 'quiz'; initQuiz()" :class="viewMode === 'quiz' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Quiz</button>
-                <button @click="viewMode = 'builder'" :class="viewMode === 'builder' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Flight Log Builder</button>
-                <button @click="viewMode = 'memory'; initMemoryGame()" :class="viewMode === 'memory' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Memory Match</button>
-                <button @click="viewMode = 'rocket'" :class="viewMode === 'rocket' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Rocket Lab</button>
-                <button @click="viewMode = 'complex'" :class="viewMode === 'complex' ? 'bg-cyan-600 text-white' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-md text-sm font-medium transition">Complex Web</button>
+            <div class="flex items-center gap-2">
+                <button @click="speakSentence()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-4 py-2.5 rounded-xl font-medium text-sm transition shadow flex items-center gap-2">
+                    🔊 Auf Deutsch anhören
+                </button>
+                <button @click="clearWorkspace()" class="bg-rose-600/80 hover:bg-rose-500 text-white px-4 py-2.5 rounded-xl font-medium text-sm transition shadow">
+                    🗑️ Leeren
+                </button>
             </div>
         </div>
     </header>
 
-    <!-- Main Content -->
-    <main class="max-w-6xl mx-auto px-4 sm:px-8 py-8">
+    <!-- Main Container -->
+    <main class="max-w-6xl mx-auto px-6 py-8 space-y-8">
 
-        <!-- Controls: Search, Filters & Bookmarks (Visible in List & Cards) -->
-        <div class="flex flex-col md:flex-row gap-4 mb-8" x-show="viewMode !== 'memory' && viewMode !== 'quiz' && viewMode !== 'builder' && viewMode !== 'rocket' && viewMode !== 'complex'">
-            <div class="relative flex-1">
-                <input type="text" x-model="searchQuery" placeholder="Search physics term, English translation, or number..." 
-                    class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 pl-10 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
-                <svg class="w-5 h-5 text-slate-500 absolute left-3 top-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-            </div>
-            <button @click="showStarredOnly = !showStarredOnly" :class="showStarredOnly ? 'bg-cyan-600 text-white border-cyan-500' : 'bg-slate-900 text-slate-300 border-slate-800'" class="px-4 py-3 rounded-lg border font-medium transition flex items-center justify-center gap-2">
-                <span>★ Starred Only</span>
-            </button>
-            <div class="md:w-64">
-                <select x-model="selectedSection" class="w-full bg-slate-900 border border-slate-800 rounded-lg px-4 py-3 text-white focus:outline-none focus:border-cyan-500 transition">
-                    <option value="all">All Sections (<span x-text="allFlattenedWords.length"></span> terms)</option>
-                    <template x-for="sec in sections" :key="sec.id">
-                        <option :value="sec.id" x-text="sec.name"></option>
-                    </template>
-                </select>
-            </div>
-        </div>
-
-        <!-- LIST VIEW -->
-        <div x-show="viewMode === 'list'" class="space-y-8">
-            <template x-for="sec in filteredSections" :key="sec.id">
-                <div class="bg-slate-900/60 border border-slate-800 rounded-xl p-6 shadow-lg">
-                    <h2 class="text-xl font-bold text-cyan-400 mb-4 pb-2 border-b border-slate-800" x-text="sec.name"></h2>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                        <template x-for="item in sec.words" :key="item.num">
-                            <div class="bg-slate-950 border border-slate-800/80 rounded-lg p-4 hover:border-cyan-700 transition flex flex-col justify-between">
-                                <div>
-                                    <div class="flex justify-between items-start mb-2">
-                                        <span class="text-xs font-mono text-slate-500" x-text="'#' + item.num"></span>
-                                        <div class="flex items-center gap-2">
-                                            <button @click="speak(item.german)" title="Pronounce" class="text-slate-400 hover:text-cyan-400 transition">🔊</button>
-                                            <button @click="toggleStar(item.num)" class="text-lg transition" :class="starredWords.includes(item.num) ? 'text-cyan-400' : 'text-slate-700 hover:text-slate-400'">★</button>
-                                        </div>
-                                    </div>
-                                    <h3 class="text-lg font-bold text-white mb-1" x-text="item.german"></h3>
-                                    <p class="text-slate-300 text-sm" x-text="item.meaning"></p>
-                                </div>
-                            </div>
-                        </template>
-                    </div>
-                </div>
-            </template>
-        </div>
-
-        <!-- FLASHCARD VIEW -->
-        <div x-show="viewMode === 'cards'" class="max-w-xl mx-auto">
-            <div class="flex justify-between items-center mb-4 text-sm text-slate-400">
-                <span>Card <span x-text="currentCardIndex + 1"></span> of <span x-text="totalFilteredWords"></span></span>
-                <button @click="toggleStar(currentWord.num)" class="text-xl transition" :class="starredWords.includes(currentWord.num) ? 'text-cyan-400' : 'text-slate-700 hover:text-slate-400'">★</button>
-            </div>
-            <div class="perspective h-80 w-full cursor-pointer mb-6" @click="flipped = !flipped">
-                <div class="relative w-full h-full duration-500 transform-style shadow-2xl rounded-2xl" :class="flipped ? 'rotate-y-180' : ''">
-                    <div class="absolute inset-0 w-full h-full bg-slate-900 border-2 border-slate-800 rounded-2xl flex flex-col items-center justify-center p-8 backface-hidden text-center">
-                        <span class="absolute top-4 left-4 text-xs font-mono text-cyan-400" x-text="'#' + currentWord.num"></span>
-                        <button @click.stop="speak(currentWord.german)" class="absolute top-4 right-4 text-lg text-slate-400 hover:text-cyan-400">🔊</button>
-                        <span class="text-xs uppercase tracking-wider text-slate-500 mb-2" x-text="currentWord.sectionName"></span>
-                        <h2 class="text-3xl font-extrabold text-white mb-3" x-text="currentWord.german"></h2>
-                        <span class="absolute bottom-4 text-xs text-slate-500">Click to flip</span>
-                    </div>
-                    <div class="absolute inset-0 w-full h-full bg-slate-900 border-2 border-cyan-600/50 rounded-2xl flex flex-col items-center justify-center p-8 backface-hidden rotate-y-180 text-center">
-                        <span class="absolute top-4 left-4 text-xs font-mono text-cyan-400" x-text="'#' + currentWord.num"></span>
-                        <span class="text-xs uppercase tracking-wider text-cyan-400 mb-2">Definition</span>
-                        <h3 class="text-2xl font-bold text-white mb-2" x-text="currentWord.meaning"></h3>
-                        <span class="absolute bottom-4 text-xs text-slate-500">Click to flip back</span>
-                    </div>
+        <!-- WORKSPACE / SENTENCE CANVAS -->
+        <section class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-purple-300">Mein Satz (Satzwerkstatt)</h2>
+                <!-- Sentence Builder Workspace Search/Filter -->
+                <div class="w-full sm:w-64">
+                    <input type="text" x-model="workspaceSearchQuery" placeholder="Im Satz filtern..." 
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 transition">
                 </div>
             </div>
-            <div class="flex justify-between items-center gap-4">
-                <button @click="prevCard()" class="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 py-3 rounded-lg font-medium transition text-center">Previous</button>
-                <button @click="flipped = false; randomCard()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-lg font-medium transition">Shuffle</button>
-                <button @click="nextCard()" class="flex-1 bg-slate-900 hover:bg-slate-800 border border-slate-800 py-3 rounded-lg font-medium transition text-center">Next</button>
-            </div>
-        </div>
+            
+            <div class="min-h-[100px] bg-slate-950 border-2 border-dashed border-slate-700 rounded-xl p-4 flex flex-wrap items-center gap-2">
+                <template x-if="workspace.length === 0">
+                    <span class="text-slate-500 text-sm font-sans italic">Klicken Sie unten auf Wörter, um Ihren Satz zu bauen...</span>
+                </template>
 
-        <!-- FLIGHT LOG BUILDER WORKSHOP VIEW -->
-        <div x-show="viewMode === 'builder'" class="max-w-4xl mx-auto space-y-6">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <h3 class="text-xl font-bold text-cyan-400 mb-2">🚀 Flight Log Sentence Builder</h3>
-                <p class="text-slate-400 text-sm mb-4">Construct German physical or rocketry descriptions by clicking blocks below. Click words in your workspace to remove them.</p>
-
-                <div class="bg-slate-950 border-2 border-dashed border-slate-800 rounded-xl p-6 min-h-[100px] flex flex-wrap items-center gap-3 mb-6">
-                    <template x-if="builtSentence.length === 0">
-                        <span class="text-slate-600 italic text-sm">Workspace empty. Click terms below to build a flight log...</span>
-                    </template>
-                    <template x-for="(word, index) in builtSentence" :key="index">
-                        <button @click="removeFromSentence(index)" class="bg-cyan-600 hover:bg-red-600 text-white px-3.5 py-2 rounded-lg font-medium text-sm transition shadow flex items-center gap-1.5 group">
-                            <span x-text="word"></span>
-                            <span class="text-xs text-cyan-200 group-hover:text-white">&times;</span>
-                        </button>
-                    </template>
-                </div>
-
-                <div class="flex flex-wrap gap-4 items-center justify-between">
-                    <div class="flex gap-3">
-                        <button @click="checkSentence()" class="bg-emerald-600 hover:bg-emerald-500 text-white px-5 py-2.5 rounded-lg font-medium transition shadow">Check Physics Log</button>
-                        <button @click="speak(builtSentenceText)" class="bg-slate-800 hover:bg-slate-700 text-white px-4 py-2.5 rounded-lg font-medium transition">🔊 Speak</button>
-                        <button @click="builtSentence = []; feedback = null" class="bg-slate-950 hover:bg-slate-800 border border-slate-800 text-slate-300 px-4 py-2.5 rounded-lg font-medium transition">Clear</button>
-                    </div>
-                </div>
-
-                <template x-if="feedback">
-                    <div class="mt-6 p-5 rounded-xl border" :class="feedback.valid ? 'bg-emerald-950/40 border-emerald-600 text-emerald-200' : 'bg-cyan-950/40 border-cyan-600 text-cyan-200'">
-                        <h4 class="font-bold text-lg mb-1" x-text="feedback.valid ? '✅ Flight Statement Validated' : '⚠️ Technical Check'"></h4>
-                        <p class="text-sm mb-2" x-text="feedback.message"></p>
-                        <div class="text-xs font-mono opacity-80" x-text="'Log Summary: ' + feedback.translation"></div>
+                <template x-for="(item, index) in filteredWorkspace" :key="index">
+                    <div class="flex items-center gap-1 bg-slate-800 border border-slate-600 text-white px-3 py-1.5 rounded-lg text-sm shadow-md animate-fade-in">
+                        <!-- Distinct coloring: German card term in Emerald, English hint/translation in Blue-Gray -->
+                        <span class="font-bold text-emerald-300" x-text="formatTokenDisplay(item, index)"></span>
+                        <span class="text-[10px] text-blue-300 opacity-80 font-mono" x-text="'[' + item.english + ']'"></span>
+                        <span class="text-[10px] opacity-60 font-mono" x-text="'(' + (item.category || item.type) + ')'"></span>
+                        
+                        <!-- Actions -->
+                        <div class="flex items-center gap-1 ml-2 border-l border-slate-700 pl-2">
+                            <button @click="moveToken(index, -1)" x-show="index > 0" class="hover:text-purple-300 text-xs">←</button>
+                            <button @click="moveToken(index, 1)" x-show="index < workspace.length - 1" class="hover:text-purple-300 text-xs">→</button>
+                            <button @click="removeToken(index)" class="hover:text-rose-400 text-xs ml-1">✕</button>
+                        </div>
                     </div>
                 </template>
             </div>
 
-            <!-- Physics Toolbox Toolbar -->
-            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 flex justify-between items-center">
-                        <span>Pronouns & Articles</span>
-                        <span class="text-xs text-slate-500 font-mono" x-text="pronounsSource"></span>
-                    </h4>
-                    <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
-                        <template x-for="item in physicsToolbox.pronouns" :key="item">
-                            <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 flex justify-between items-center">
-                        <span>Action Verbs</span>
-                        <span class="text-xs text-slate-500 font-mono" x-text="verbsSource"></span>
-                    </h4>
-                    <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
-                        <template x-for="item in physicsToolbox.verbs" :key="item">
-                            <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
-                        </template>
-                    </div>
-                </div>
-
-                <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3 flex justify-between items-center">
-                        <span>Modifiers & Connectors</span>
-                        <span class="text-xs text-slate-500 font-mono" x-text="modifiersSource"></span>
-                    </h4>
-                    <div class="flex flex-wrap gap-2 max-h-36 overflow-y-auto">
-                        <template x-for="item in physicsToolbox.modifiers" :key="item">
-                            <button @click="addToSentence(item)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-slate-200 px-3 py-1.5 rounded-md text-xs font-medium transition" x-text="item"></button>
-                        </template>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Physics Vocabulary Quick Add with Search Bar & Pagination -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <div class="flex items-center gap-3">
-                        <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider">
-                            Vocabulary Terms (<span x-text="builderFilteredWords.length"></span>)
-                        </h4>
-                        <!-- Toggle for Article vs No-Article Terms -->
-                        <button @click="toggleVocabularyMode()" class="text-xs px-2.5 py-1 rounded border transition font-mono" :class="useNoArticles ? 'bg-cyan-950 border-cyan-600 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'">
-                            <span x-text="useNoArticles ? 'Mode: noarticle.json' : 'Mode: physics.json'"></span>
-                        </button>
-                    </div>
-
-                    <!-- Builder Search Bar -->
-                    <div class="relative w-full sm:w-64">
-                        <input type="text" x-model="builderSearchQuery" placeholder="Filter terms..." 
-                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 pl-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
-                        <svg class="w-4 h-4 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
-                    </div>
-
-                    <!-- Pagination Controls -->
-                    <div class="flex items-center gap-2">
-                        <button @click="prevBuilderPage()" :disabled="builderPageIndex === 0" class="px-2.5 py-1 bg-slate-950 border border-slate-800 disabled:opacity-40 rounded text-xs text-slate-300 hover:border-cyan-500 transition">Prev</button>
-                        <span class="text-xs text-slate-400 font-mono" x-text="(builderPageIndex + 1) + ' / ' + totalBuilderPages"></span>
-                        <button @click="nextBuilderPage()" :disabled="builderPageIndex >= totalBuilderPages - 1" class="px-2.5 py-1 bg-slate-950 border border-slate-800 disabled:opacity-40 rounded text-xs text-slate-300 hover:border-cyan-500 transition">Next</button>
-                    </div>
-                </div>
-
-                <div class="flex flex-wrap gap-2 min-h-[100px] p-1">
-                    <template x-for="w in builderPageWords" :key="w.num">
-                        <button @click="addToSentence(w.german)" class="bg-slate-950 border border-slate-800 hover:border-cyan-500 text-cyan-200 px-2.5 py-1.5 rounded-md text-xs transition" x-text="w.german"></button>
-                    </template>
-                </div>
-            </div>
-        </div>
-
-        <!-- MULTIPLE CHOICE QUIZ VIEW -->
-        <div x-show="viewMode === 'quiz'" class="max-w-xl mx-auto bg-slate-900 border border-slate-800 rounded-2xl p-8 shadow-xl">
-            <div class="flex justify-between items-center mb-6 border-b border-slate-800 pb-4">
-                <span class="text-sm text-slate-400">Question <span x-text="quizIndex + 1"></span> of 10</span>
-                <span class="text-sm font-bold text-cyan-400">Score: <span x-text="quizScore"></span></span>
-            </div>
-            <template x-if="!quizFinished">
+            <!-- Constructed Sentence & Grammar Feedback -->
+            <div class="bg-slate-900 border border-slate-700 rounded-xl p-4 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
-                    <div class="text-center mb-8">
-                        <span class="text-xs text-slate-600 font-mono" x-text="'#' + currentQuizQuestion.num"></span>
-                        <h3 class="text-3xl font-extrabold text-white mt-2 mb-3" x-text="currentQuizQuestion.german"></h3>
-                        <button @click="speak(currentQuizQuestion.german)" class="text-sm text-cyan-400 hover:underline">🔊 Listen Pronunciation</button>
-                    </div>
-                    <div class="space-y-3">
-                        <template x-for="option in currentQuizOptions" :key="option">
-                            <button @click="answerQuiz(option)" class="w-full text-left bg-slate-950 border border-slate-800 hover:border-cyan-500 p-4 rounded-xl text-white font-medium transition" x-text="option"></button>
-                        </template>
-                    </div>
+                    <span class="text-xs text-slate-400 uppercase font-mono block mb-1">Generierter Satz:</span>
+                    <p class="text-xl font-bold text-white font-mono" x-text="constructedSentence || '...'"></p>
                 </div>
-            </template>
-            <template x-if="quizFinished">
-                <div class="text-center py-6">
-                    <h3 class="text-2xl font-bold mb-2">🎯 Quiz Completed!</h3>
-                    <p class="text-slate-300 mb-6">You scored <span class="font-bold text-cyan-400" x-text="quizScore"></span> out of 10.</p>
-                    <button @click="initQuiz()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-6 py-3 rounded-xl font-medium transition shadow">Play Again</button>
+                
+                <!-- Grammar Status Badge -->
+                <div class="px-4 py-2 rounded-lg text-xs font-semibold shadow-inner"
+                     :class="grammarCheck.valid ? 'bg-emerald-950/80 border border-emerald-600 text-emerald-300' : 'bg-amber-950/80 border border-amber-600 text-amber-300'">
+                    <span x-text="grammarCheck.message"></span>
                 </div>
-            </template>
-        </div>
+            </div>
+        </section>
 
-        <!-- MEMORY MATCH GAME VIEW -->
-        <div x-show="viewMode === 'memory'" class="max-w-4xl mx-auto">
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-6 shadow-xl mb-6 flex flex-wrap justify-between items-center gap-4">
-                <div class="flex items-center gap-6">
-                    <div>
-                        <span class="text-xs text-slate-400 uppercase tracking-wider block">Pairs</span>
-                        <span class="text-xl font-bold text-cyan-400" x-text="matchedPairs + ' / ' + totalPairs"></span>
-                    </div>
-                    <div>
-                        <span class="text-xs text-slate-400 uppercase tracking-wider block">Moves</span>
-                        <span class="text-xl font-bold text-white" x-text="memoryMoves"></span>
-                    </div>
-                    <div x-show="enableSprintTimer && !isMemorizing">
-                        <span class="text-xs text-slate-400 uppercase tracking-wider block">Time</span>
-                        <span class="text-xl font-bold text-emerald-400" x-text="sprintSeconds + 's'"></span>
-                    </div>
+        <!-- WORD BANK TABS & SEARCH -->
+        <section class="bg-slate-800 border border-slate-700 rounded-2xl p-6 shadow-xl space-y-6">
+            <div class="flex flex-col md:flex-row gap-4 justify-between items-center border-b border-slate-700 pb-4">
+                <!-- Search -->
+                <div class="relative w-full md:w-80">
+                    <input type="text" x-model="searchQuery" placeholder="Wörter suchen (Deutsch / Englisch)..." 
+                           class="w-full bg-slate-900 border border-slate-700 rounded-lg px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none focus:border-purple-400 transition">
                 </div>
-                <div class="flex flex-wrap items-center gap-3">
-                    <label class="flex items-center gap-1.5 text-xs text-slate-300 cursor-pointer">
-                        <input type="checkbox" x-model="enableSprintTimer" class="rounded bg-slate-950 border-slate-800 text-cyan-600 focus:ring-0"> Timer Sprint
-                    </label>
-                    <select x-model.number="memoryPairCount" @change="initMemoryGame()" class="bg-slate-950 border border-slate-800 rounded-lg px-3 py-2 text-white text-sm focus:outline-none focus:border-cyan-500">
-                        <option value="6">6 Pairs</option>
-                        <option value="8">8 Pairs</option>
-                        <option value="12">12 Pairs</option>
-                        <option value="16">16 Pairs</option>
-                    </select>
-                    <button @click="initMemoryGame()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition">New Game</button>
+
+                <!-- Active Dataset Tab Selector -->
+                <div class="flex flex-wrap bg-slate-900 p-1.5 rounded-xl border border-slate-700 gap-1">
+                    <button @click="activeTab = 'verbs'" :class="activeTab === 'verbs' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs font-medium transition">Verben</button>
+                    <button @click="activeTab = 'grammar'" :class="activeTab === 'grammar' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs font-medium transition">Konnektoren & Grammatik</button>
+                    <button @click="activeTab = 'nouns'" :class="activeTab === 'nouns' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs font-medium transition">Nomen</button>
+                    <button @click="activeTab = 'articles_pronouns'" :class="activeTab === 'articles_pronouns' ? 'bg-purple-600 text-white shadow' : 'text-slate-400 hover:text-white'" class="px-3 py-2 rounded-lg text-xs font-medium transition">Artikel & Pronomen</button>
                 </div>
             </div>
 
-            <!-- Memorization Phase Alert Banner -->
-            <template x-if="isMemorizing">
-                <div class="bg-cyan-950/80 border-2 border-cyan-500 text-cyan-100 p-5 rounded-xl mb-6 shadow-xl flex flex-col sm:flex-row items-center justify-between gap-4 animate-pulse">
-                    <div class="flex items-center gap-3">
-                        <span class="text-3xl">🧠</span>
+            <!-- WORD CARDS GRID (Distinct German vs English card styling) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 max-h-[500px] overflow-y-auto pr-2">
+                <template x-for="item in filteredItems" :key="(item.id || item.german) + '-' + activeTab">
+                    <div @click="selectItem(item)" 
+                         class="bg-slate-900/90 hover:bg-slate-700/80 border border-slate-700/80 rounded-xl p-3.5 transition cursor-pointer shadow hover:border-purple-400 flex flex-col justify-between group">
                         <div>
-                            <h4 class="font-bold text-base text-cyan-300">Memorization Phase Active</h4>
-                            <p class="text-xs text-cyan-200/90 mt-0.5">You have <span class="font-extrabold text-cyan-400 font-mono text-sm" x-text="memorizeCountdown + 's'"></span> to study the card placements before they flip face down!</p>
-                        </div>
-                    </div>
-                    <button @click="startMatchingNow()" class="bg-cyan-600 hover:bg-cyan-500 text-white px-5 py-2.5 rounded-lg text-xs font-bold uppercase tracking-wider transition shadow whitespace-nowrap">
-                        Start Now (Skip Countdown)
-                    </button>
-                </div>
-            </template>
-
-            <template x-if="matchedPairs === totalPairs && totalPairs > 0 && !isMemorizing">
-                <div class="bg-emerald-950/80 border border-emerald-600 text-emerald-100 p-6 rounded-xl text-center mb-6 shadow-lg animate-bounce">
-                    <h3 class="text-2xl font-bold mb-1">🎉 Excellent Work!</h3>
-                    <p class="text-sm">Matched all physics pairs in <span class="font-bold" x-text="memoryMoves"></span> moves <template x-if="enableSprintTimer"><span>in <span class="font-bold" x-text="sprintSeconds"></span> seconds</span></template>!</p>
-                    <button @click="initMemoryGame()" class="mt-4 bg-emerald-600 hover:bg-emerald-500 text-white px-6 py-2 rounded-lg font-medium transition shadow">Play Again</button>
-                </div>
-            </template>
-
-            <!-- Memory Game Cards Grid with Color Coding -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-6 gap-3">
-                <template x-for="card in memoryCards" :key="card.id">
-                    <div @click="flipCard(card)" 
-                         class="h-28 border-2 rounded-xl flex flex-col items-center justify-center p-3 text-center transition transform duration-300 select-none shadow-md relative"
-                         :class="{
-                          'cursor-not-allowed border-cyan-500 bg-slate-950 text-cyan-200': isMemorizing,
-                          'border-slate-800 bg-slate-900 hover:border-cyan-500 cursor-pointer': !card.flipped && !card.matched && !isMemorizing,
-                          'border-cyan-500 bg-slate-950 text-cyan-300 scale-105 cursor-default': card.flipped && !card.matched && !isMemorizing && card.type === 'de',
-                          'border-indigo-500 bg-indigo-950/80 text-indigo-200 scale-105 cursor-default': card.flipped && !card.matched && !isMemorizing && card.type === 'en',
-                          'border-emerald-600 bg-emerald-950/40 text-emerald-300 opacity-80 cursor-default': card.matched
-                         }">
-                        <!-- Face Down State -->
-                        <div x-show="!card.flipped && !card.matched" class="text-slate-600 font-bold text-xl">#</div>
-                        
-                        <!-- Face Up State -->
-                        <template x-if="card.flipped || card.matched">
-                            <div class="w-full flex flex-col items-center justify-center">
-                                <span class="text-[10px] font-mono tracking-wider uppercase mb-1 opacity-70"
-                                    :class="card.type === 'de' ? 'text-cyan-400' : 'text-indigo-400'"
-                                    x-text="card.type === 'de' ? '🇩🇪 GERMAN' : '🇬🇧 ENGLISH'"></span>
-                                <div class="text-xs sm:text-sm font-semibold" x-text="card.text"></div>
+                            <div class="flex justify-between items-start gap-1">
+                                <!-- German Card Component (Emerald Theme) -->
+                                <span class="font-bold text-emerald-300 text-sm group-hover:text-purple-300" x-text="item.german"></span>
+                                <span class="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-800 border border-slate-700 text-purple-300" x-text="item.category || item.type"></span>
                             </div>
-                        </template>
+                            <!-- English Translation Card Component (Distinct Slate/Blue Theme) -->
+                            <p class="text-xs text-blue-200/90 bg-blue-950/40 border border-blue-900/50 rounded px-2 py-1 mt-2 font-mono" x-text="item.english"></p>
+                        </div>
+                        <span class="text-[10px] text-emerald-400 font-mono mt-3 text-right group-hover:underline">+ Hinzufügen</span>
                     </div>
                 </template>
             </div>
-        </div>
-
-        <!-- ROCKET LAB VIEW -->
-        <div x-show="viewMode === 'rocket'" class="max-w-5xl mx-auto space-y-8">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-xl">
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 border-b border-slate-800 pb-4">
-                    <div>
-                        <h3 class="text-xl font-bold text-cyan-400">🚀 Rocket Aerodynamics & Flight Lab</h3>
-                        <p class="text-slate-400 text-sm">Design your airframe parameters and calculate real-time drag, Reynolds number, and flight feasibility in German & English.</p>
-                    </div>
-                    <span class="text-xs px-3 py-1 rounded bg-cyan-950/60 border border-cyan-800 text-cyan-300 font-mono">Interactive Simulator</span>
-                </div>
-
-                <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    <!-- Sliders & Inputs -->
-                    <div class="space-y-4 bg-slate-950 p-5 rounded-xl border border-slate-800/80">
-                        <h4 class="font-bold text-white text-sm uppercase tracking-wider text-cyan-400">Design Parameters / Parameter</h4>
-                        
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-slate-300">Body Diameter (<span class="italic">der Durchmesser</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="rocket.diameter + ' mm'"></span>
-                            </div>
-                            <input type="range" x-model.number="rocket.diameter" min="20" max="150" step="1" class="w-full accent-cyan-500 bg-slate-900">
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-slate-300">Body Length (<span class="italic">die Länge</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="rocket.length + ' mm'"></span>
-                            </div>
-                            <input type="range" x-model.number="rocket.length" min="200" max="2000" step="10" class="w-full accent-cyan-500 bg-slate-900">
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-slate-300">Velocity (<span class="italic">die Geschwindigkeit</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="rocket.velocity + ' m/s'"></span>
-                            </div>
-                            <input type="range" x-model.number="rocket.velocity" min="10" max="500" step="5" class="w-full accent-cyan-500 bg-slate-900">
-                        </div>
-
-                        <div class="pt-2 border-t border-slate-900">
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-slate-300">Target Altitude (<span class="italic">die Zielhöhe</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="rocket.targetAltitude + ' m'"></span>
-                            </div>
-                            <input type="range" x-model.number="rocket.targetAltitude" min="100" max="3000" step="50" class="w-full accent-cyan-500 bg-slate-900">
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-slate-300">Motor Impulse (<span class="italic">Gesamtimpuls Ns</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="rocket.impulse + ' Ns'"></span>
-                            </div>
-                            <input type="range" x-model.number="rocket.impulse" min="20" max="600" step="10" class="w-full accent-cyan-500 bg-slate-900">
-                        </div>
-
-                        <div>
-                            <div class="flex justify-between text-xs mb-1">
-                                <span class="text-slate-300">Rocket Mass (<span class="italic">die Masse g</span>):</span>
-                                <span class="font-mono text-cyan-300" x-text="rocket.mass + ' g'"></span>
-                            </div>
-                            <input type="range" x-model.number="rocket.mass" min="100" max="3000" step="50" class="w-full accent-cyan-500 bg-slate-900">
-                        </div>
-                    </div>
-
-                    <!-- Visual Blueprint Preview & Feasibility Status -->
-                    <div class="bg-slate-950 p-5 rounded-xl border border-slate-800/80 flex flex-col justify-between relative overflow-hidden">
-                        <div>
-                            <span class="text-xs text-slate-500 font-mono block mb-2">Blueprint & Feasibility / Machbarkeit</span>
-                            <div class="h-40 flex items-center justify-center">
-                                <!-- Dynamic SVG Rocket -->
-                                <svg viewBox="0 0 100 300" class="h-full w-auto drop-shadow-[0_0_15px_rgba(6,182,212,0.2)]">
-                                    <!-- Nose Cone -->
-                                    <path d="M50 10 Q 50 10, 70 80 L 30 80 Z" fill="#0e7490" stroke="#22d3ee" stroke-width="2"/>
-                                    <!-- Body Tube -->
-                                    <rect x="30" y="80" width="40" :height="bodyTubeHeight" fill="#090d16" stroke="#22d3ee" stroke-width="2"/>
-                                    <!-- Fins -->
-                                    <polygon points="30,220 10,260 30,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
-                                    <polygon points="70,220 90,260 70,250" fill="#0e7490" stroke="#22d3ee" stroke-width="1.5"/>
-                                </svg>
-                            </div>
-                        </div>
-
-                        <!-- Feasibility Alert Box -->
-                        <div class="mt-4 p-3 rounded-lg border text-xs" :class="isFeasible ? 'bg-emerald-950/40 border-emerald-600 text-emerald-200' : 'bg-amber-950/40 border-amber-600 text-amber-200'">
-                            <div class="font-bold mb-1" x-text="isFeasible ? '✅ Target Altitude Achievable / Zielhöhe erreichbar' : '⚠️ Insufficient Impulse / Zu geringer Impuls'"></div>
-                            <div class="text-[11px] opacity-90" x-text="feasibilityMessage"></div>
-                        </div>
-                    </div>
-
-                    <!-- Aerodynamic Output Metrics -->
-                    <div class="space-y-4 bg-slate-950 p-5 rounded-xl border border-slate-800/80 flex flex-col justify-between">
-                        <h4 class="font-bold text-white text-sm uppercase tracking-wider text-cyan-400">Flight Calculations / Ergebnisse</h4>
-                        
-                        <div class="space-y-3 text-sm">
-                            <div class="flex justify-between border-b border-slate-900 pb-2">
-                                <span class="text-slate-400">Reynolds Number (<span class="text-xs text-cyan-300">Re</span>):</span>
-                                <span class="font-mono text-white" x-text="reynoldsNumber"></span>
-                            </div>
-                            <div class="flex justify-between border-b border-slate-900 pb-2">
-                                <span class="text-slate-400">Drag Coefficient (<span class="text-xs text-cyan-300">Cd</span>):</span>
-                                <span class="font-mono text-white" x-text="dragCoefficient"></span>
-                            </div>
-                            <div class="flex justify-between border-b border-slate-900 pb-2">
-                                <span class="text-slate-400">Total Drag Force (<span class="text-xs text-cyan-300">Luftwiderstand Fd</span>):</span>
-                                <span class="font-mono text-emerald-400 font-bold" x-text="dragForce + ' N'"></span>
-                            </div>
-                            <div class="flex justify-between border-b border-slate-900 pb-2">
-                                <span class="text-slate-400">Est. Max Apogee (<span class="text-xs text-cyan-300">Gipfelhöhe</span>):</span>
-                                <span class="font-mono text-cyan-300 font-bold" x-text="estimatedApogee + ' m'"></span>
-                            </div>
-                            <div class="flex justify-between">
-                                <span class="text-slate-400">Thrust-to-Weight (<span class="text-xs text-cyan-300">Schub-Gewicht</span>):</span>
-                                <span class="font-mono text-white" x-text="thrustToWeightRatio + ':1'"></span>
-                            </div>
-                        </div>
-
-                        <button @click="speak('Die geschätzte Gipfelhöhe beträgt ' + estimatedApogee + ' Meter bei einem Gesamtimpuls von ' + rocket.impulse + ' Newtonsekunden.')" class="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-2.5 rounded-lg text-sm font-medium transition shadow">
-                            🔊 Speak Flight Report (DE)
-                        </button>
-                    </div>
-                </div>
-
-                <!-- Explanation Card -->
-                <div class="mt-8 p-5 bg-slate-950 rounded-xl border border-slate-800">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-3">How Do We Know If It Reaches Target Altitude? / Wie prüfen wir die Zielhöhe?</h4>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs text-slate-300">
-                        <div class="space-y-2">
-                            <p><strong class="text-white">🇩🇪 Energiebilanz & Verluste:</strong> Um eine Zielhöhe ($h$) zu erreichen, muss die vom Motor gelieferte Energie (Gesamtimpuls) die potentielle Energie ($E_p = m \cdot g \cdot h$) und die aerodynamischen Verluste durch Luftwiderstand ($F_d$) überwinden.</p>
-                            <p><strong class="text-white">Schub-Gewicht-Verhältnis:</strong> Ein Startwert von mindestens 5:1 sorgt dafür, dass die Rakete die Startrampe schnell verlässt, bevor Instabilitäten auftreten.</p>
-                        </div>
-                        <div class="space-y-2">
-                            <p><strong class="text-white">🇬🇧 Energy Balance & Losses:</strong> To reach a target altitude ($h$), the motor's total impulse energy must overcome potential energy ($E_p = m \cdot g \cdot h$) and aerodynamic drag losses ($F_d$).</p>
-                            <p><strong class="text-white">Thrust-to-Weight:</strong> A liftoff ratio of at least 5:1 ensures the rocket clears the launch rod cleanly before aerodynamic control takes over.</p>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- German-English Rocketry Vocabulary Glossary -->
-                <div class="mt-8 pt-6 border-t border-slate-800">
-                    <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider mb-4">Aerodynamics & Rocketry Vocabulary Glossary / Vokabelliste</h4>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3 text-xs">
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Luftwiderstand</strong>Drag / Air Resistance</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Zielhöhe</strong>Target Altitude</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Gesamtimpuls</strong>Total Impulse ($N\cdot s$)</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Gipfelhöhe (Apogäum)</strong>Apogee / Peak Altitude</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">das Schub-Gewicht-Verhältnis</strong>Thrust-to-Weight Ratio</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Reynolds-Zahl</strong>Reynolds Number</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">der Anstellwinkel</strong>Angle of Attack</div>
-                        <div class="bg-slate-950 p-3 rounded-lg border border-slate-800"><strong class="text-white block text-sm">die Grenzschicht</strong>Boundary Layer</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- COMPLEX WEB EMBED VIEW -->
-        <div x-show="viewMode === 'complex'" class="w-full">
-            <div class="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-                <div class="bg-slate-950 px-4 py-3 border-b border-slate-800 flex justify-between items-center text-xs text-slate-400">
-                    <span class="font-mono">https://terranovaeng.github.io/complexweb/</span>
-                    <a href="https://terranovaeng.github.io/complexweb/" target="_blank" class="text-cyan-400 hover:underline">Open in new tab ↗</a>
-                </div>
-                <iframe src="https://terranovaeng.github.io/complexweb/" class="w-full h-[75vh] border-0 bg-slate-950" title="Complex Web"></iframe>
-            </div>
-        </div>
+        </section>
 
     </main>
 
-    <!-- Footer -->
-    <footer class="text-center py-8 text-xs text-slate-500 border-t border-slate-900 mt-12">
-        TerraNova Engineering Lab &bull; Physics & Aerospace Vocabulary Workshop
-    </footer>
+    <!-- VERB CONJUGATION MODAL -->
+    <div x-show="showVerbModal" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 z-50" x-cloak>
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl p-6 max-w-md w-full shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="text-lg font-bold text-white">Verb konjugieren: <span class="text-purple-300" x-text="selectedVerb?.german"></span></h3>
+                <button @click="showVerbModal = false" class="text-slate-400 hover:text-white">✕</button>
+            </div>
+            
+            <p class="text-xs text-slate-300">Wählen Sie die passende Form für Ihren Satz aus:</p>
 
-    <!-- JavaScript Data and Application Logic -->
+            <div class="grid grid-cols-2 gap-2" x-if="selectedVerb?.conjugation">
+                <template x-for="(form, pronoun) in selectedVerb.conjugation">
+                    <button @click="addConjugatedVerb(pronoun, form)" class="bg-slate-900 hover:bg-purple-600 border border-slate-700 p-2.5 rounded-xl text-left transition">
+                        <span class="text-[10px] text-slate-400 block font-mono" x-text="pronoun"></span>
+                        <span class="text-sm font-bold text-white" x-text="form"></span>
+                    </button>
+                </template>
+            </div>
+
+            <button @click="addInfinitiveVerb()" class="w-full bg-slate-700 hover:bg-slate-600 text-white text-xs font-medium py-2 rounded-xl transition mt-2">
+                Infinitiv verwenden (<span x-text="selectedVerb?.german"></span>)
+            </button>
+        </div>
+    </div>
+
+    <!-- APP SCRIPT & INTEGRATED DATASETS -->
     <script>
-        function physicsApp() {
+        function sentenceBuilderApp() {
             return {
-                viewMode: 'list',
+                activeTab: 'verbs',
                 searchQuery: '',
-                builderSearchQuery: '',
-                selectedSection: 'all',
-                currentCardIndex: 0,
-                flipped: false,
-                sections: [],
-                noArticleSections: [],
-                useNoArticles: false,
-                dataSource: 'Loading...',
-                starredWords: JSON.parse(localStorage.getItem('starred_physics') || '[]'),
-                showStarredOnly: false,
+                workspaceSearchQuery: '',
+                workspace: [],
+                showVerbModal: false,
+                selectedVerb: null,
 
-                // Builder Pagination State (28 terms per page)
-                builderPageIndex: 0,
-                builderPageSize: 28,
-
-                // External Data Sources Status Labels
-                pronounsSource: 'Loading...',
-                verbsSource: 'Loading...',
-                modifiersSource: 'Loading...',
-                noArticleSource: 'Loading...',
-
-                // Rocket Lab Simulator State
-                rocket: {
-                    diameter: 50,       // mm
-                    length: 750,        // mm
-                    velocity: 120,      // m/s
-                    targetAltitude: 500,// m
-                    impulse: 160,       // Ns
-                    mass: 450           // g
-                },
-
-                builtSentence: [],
-                feedback: null,
-
-                // Dedicated Toolboxes for Each JSON Resource
-                physicsToolbox: {
-                    pronouns: [],     // Loaded from pronouns.json or fallback
-                    verbs: [],        // Loaded from verbs.json
-                    modifiers: []     // Loaded from modifiers.json
-                },
-                
-                quizIndex: 0,
-                quizScore: 0,
-                quizFinished: false,
-                currentQuizQuestion: { num: 0, german: '', meaning: '' },
-                currentQuizOptions: [],
-                quizPool: [],
-
-                memoryPairCount: 8,
-                memoryCards: [],
-                flippedCards: [],
-                matchedPairs: 0,
-                totalPairs: 0,
-                memoryMoves: 0,
-                isChecking: false,
-                enableSprintTimer: false,
-                sprintSeconds: 0,
-                timerInterval: null,
-
-                // Memorization Phase state
-                isMemorizing: false,
-                memorizeCountdown: 25,
-                memorizeTimer: null,
+                verbs: [],
+                grammar: [],
+                nouns: [],
+                articles_pronouns: [],
 
                 async initData() {
-                    const extractStrings = (data) => {
-                        if (Array.isArray(data)) {
-                            return data.map(item => (typeof item === 'object' && item !== null) ? (item.german || item.deutsch || item.word || item.text || item.english) : String(item));
-                        }
-                        if (typeof data === 'object' && data !== null) {
-                            return Object.values(data).map(item => {
-                                if (typeof item === 'string') return item;
-                                if (typeof item === 'object' && item !== null) {
-                                    return item.german || item.deutsch || item.word || item.text || item.english || String(item);
-                                }
-                                return String(item);
-                            });
-                        }
-                        return [];
-                    };
-
-                    // 1. Vocabulary Terms with Articles -> physics.json
                     try {
-                        let response = await fetch('physics.json');
-                        if (!response.ok) throw new Error('File not found');
-                        let data = await response.json();
-                        this.sections = Array.isArray(data) ? data : (data.sections ? data.sections : this.formatRawWordsToSections(data));
-                        this.dataSource = 'physics.json';
-                    } catch (e) {
-                        const fallbackPhysics = {
-                            "1": { "german": "die Kraft", "english": "Force" },
-                            "2": { "german": "die Masse", "english": "Mass" },
-                            "3": { "german": "die Beschleunigung", "english": "Acceleration" },
-                            "4": { "german": "der Schub", "english": "Thrust" },
-                            "5": { "german": "der Luftwiderstand", "english": "Drag / air resistance" }
-                        };
-                        this.sections = this.formatRawWordsToSections(fallbackPhysics);
-                        this.dataSource = 'Hardcoded Fallback';
-                    }
-
-                    // 2. Vocabulary Terms without Articles -> noarticle.json
-                    try {
-                        let resNoArt = await fetch('noarticle.json');
-                        if (resNoArt.ok) {
-                            let dataNoArt = await resNoArt.json();
-                            this.noArticleSections = Array.isArray(dataNoArt) ? dataNoArt : (dataNoArt.sections ? dataNoArt.sections : this.formatRawWordsToSections(dataNoArt));
-                            this.noArticleSource = 'noarticle.json';
+                        let res = await fetch('./verbsconjugated.json');
+                        if (res.ok) {
+                            let rawVerbs = await res.json();
+                            this.verbs = rawVerbs.map(v => ({
+                                id: v.id,
+                                german: v.verb || v.german,
+                                english: v.translation || v.english,
+                                type: v.type || "Regular / Irregular",
+                                conjugation: v.present || v.conjugation
+                            }));
                         }
                     } catch (e) {
-                        this.noArticleSections = [];
-                        this.noArticleSource = 'Unavailable';
+                        console.log('Falling back to default verbs list:', e);
+                        this.verbs = [
+                            { id: 1, german: "sein", english: "to be", type: "Auxiliary / Irregular", conjugation: { ich: "bin", du: "bist", er_sie_es: "ist", wir: "sind", ihr: "seid", sie_Sie: "sind" } },
+                            { id: 2, german: "haben", english: "to have", type: "Auxiliary / Irregular", conjugation: { ich: "habe", du: "hast", er_sie_es: "hat", wir: "haben", ihr: "habt", sie_Sie: "haben" } }
+                        ];
                     }
 
-                    // 3. Pronouns & Articles -> pronouns.json
-                    try {
-                        let resPronouns = await fetch('pronouns.json');
-                        if (!resPronouns.ok) resPronouns = await fetch('pronounsandarticles.json');
-                        if (resPronouns.ok) {
-                            let pronounsData = await resPronouns.json();
-                            this.physicsToolbox.pronouns = extractStrings(pronounsData);
-                            this.pronounsSource = 'pronouns.json';
-                        } else {
-                            throw new Error('Pronouns file unavailable');
-                        }
-                    } catch (e) {
-                        this.physicsToolbox.pronouns = ['die Rakete', 'der Motor', 'der Körper', 'wir', 'es', 'der Wind', 'der', 'die', 'das', 'ein', 'eine'];
-                        this.pronounsSource = 'Fallback';
-                    }
+                    this.grammar = [
+                        { id: 1, german: "und", english: "and", type: "Coordinating Conjunction" },
+                        { id: 2, german: "aber", english: "but / however", type: "Coordinating Conjunction" },
+                        { id: 6, german: "weil", english: "because (subordinating)", type: "Subordinating Conjunction" },
+                        { id: 7, german: "dass", english: "that (subordinating)", type: "Subordinating Conjunction" },
+                        { id: 21, german: "deshalb", english: "therefore / that is why", type: "Conjunctive Adverb" }
+                    ];
 
-                    // 4. Action Verbs -> verbs.json
-                    try {
-                        let resVerbs = await fetch('verbs.json');
-                        if (resVerbs.ok) {
-                            let verbsData = await resVerbs.json();
-                            this.physicsToolbox.verbs = extractStrings(verbsData);
-                            this.verbsSource = 'verbs.json';
-                        }
-                    } catch (e) {
-                        this.physicsToolbox.verbs = ['erzeugt', 'beschleunigt', 'wirkt', 'fliegt', 'steigt', 'sinkt', 'stabilisiert'];
-                        this.verbsSource = 'Fallback';
-                    }
+                    this.nouns = [
+                        { id: 1, german: "der Mann", english: "man", category: "Noun with Article" },
+                        { id: 2, german: "die Frau", english: "woman", category: "Noun with Article" },
+                        { id: 3, german: "das Kind", english: "child", category: "Noun with Article" }
+                    ];
 
-                    // 5. Modifiers & Connectors -> modifiers.json
-                    try {
-                        let resMod = await fetch('modifiers.json');
-                        if (resMod.ok) {
-                            let modData = await resMod.json();
-                            this.physicsToolbox.modifiers = extractStrings(modData);
-                            this.modifiersSource = 'modifiers.json';
-                        }
-                    } catch (e) {
-                        this.physicsToolbox.modifiers = ['schnell', 'hoch', 'nach oben', 'gegen', 'mit', 'durch', 'maximal'];
-                        this.modifiersSource = 'Fallback';
-                    }
+                    this.articles_pronouns = [
+                        { id: 101, german: "der", english: "the (masc. nom.)", type: "Definite Article" },
+                        { id: 201, german: "ich", english: "I", type: "Personal Pronoun" },
+                        { id: 202, german: "du", english: "you (informal singular)", type: "Personal Pronoun" }
+                    ];
                 },
 
-                formatRawWordsToSections(rawObj) {
-                    let wordKeys = Object.keys(rawObj);
-                    let chunks = [];
-                    for (let i = 0; i < wordKeys.length; i += 25) {
-                        let chunkKeys = wordKeys.slice(i, i + 25);
-                        let chunkWords = chunkKeys.map(k => ({
-                            num: parseInt(k),
-                            german: rawObj[k].german || rawObj[k].deutsch,
-                            meaning: rawObj[k].english || rawObj[k].meaning,
-                            type: 'Term'
-                        }));
-                        let startNum = chunkKeys[0];
-                        let endNum = chunkKeys[chunkKeys.length - 1];
-                        chunks.push({
-                            id: 'sec_' + (chunks.length + 1),
-                            name: `Section ${chunks.length + 1} (${startNum}–${endNum})`,
-                            words: chunkWords
-                        });
-                    }
-                    return chunks;
+                get currentDataset() {
+                    if (this.activeTab === 'verbs') return this.verbs;
+                    if (this.activeTab === 'grammar') return this.grammar;
+                    if (this.activeTab === 'nouns') return this.nouns;
+                    if (this.activeTab === 'articles_pronouns') return this.articles_pronouns;
+                    return [];
                 },
 
-                addToSentence(word) {
-                    this.builtSentence = [...this.builtSentence, word];
-                    this.feedback = null;
-                },
-
-                removeFromSentence(index) {
-                    this.builtSentence = this.builtSentence.filter((_, i) => i !== index);
-                    this.feedback = null;
-                },
-
-                get activeSections() {
-                    return (this.useNoArticles && this.noArticleSections.length > 0) ? this.noArticleSections : this.sections;
-                },
-
-                get activeFlattenedWords() {
-                    let list = [];
-                    this.activeSections.forEach(sec => {
-                        sec.words.forEach(w => {
-                            list.push({ ...w, sectionName: sec.name });
-                        });
-                    });
-                    return list;
-                },
-
-                get builderFilteredWords() {
-                    let q = (this.builderSearchQuery || '').toLowerCase();
-                    if (!q) return this.activeFlattenedWords;
-                    return this.activeFlattenedWords.filter(w => 
-                        w.german.toLowerCase().includes(q) || 
-                        w.meaning.toLowerCase().includes(q) || 
-                        w.num.toString().includes(q)
+                get filteredItems() {
+                    let q = this.searchQuery.toLowerCase().trim();
+                    if (!q) return this.currentDataset;
+                    return this.currentDataset.filter(item => 
+                        item.german.toLowerCase().includes(q) || 
+                        item.english.toLowerCase().includes(q) ||
+                        (item.category && item.category.toLowerCase().includes(q)) ||
+                        (item.type && item.type.toLowerCase().includes(q))
                     );
                 },
 
-                get totalBuilderPages() {
-                    return Math.ceil(this.builderFilteredWords.length / this.builderPageSize) || 1;
+                get filteredWorkspace() {
+                    let q = this.workspaceSearchQuery.toLowerCase().trim();
+                    if (!q) return this.workspace;
+                    return this.workspace.filter(item =>
+                        item.german.toLowerCase().includes(q) ||
+                        item.english.toLowerCase().includes(q) ||
+                        (item.category && item.category.toLowerCase().includes(q))
+                    );
                 },
 
-                get builderPageWords() {
-                    let start = this.builderPageIndex * this.builderPageSize;
-                    return this.builderFilteredWords.slice(start, start + this.builderPageSize);
-                },
-
-                nextBuilderPage() {
-                    if (this.builderPageIndex < this.totalBuilderPages - 1) {
-                        this.builderPageIndex++;
-                    }
-                },
-
-                prevBuilderPage() {
-                    if (this.builderPageIndex > 0) {
-                        this.builderPageIndex--;
-                    }
-                },
-
-                toggleVocabularyMode() {
-                    this.useNoArticles = !this.useNoArticles;
-                    this.builderPageIndex = 0;
-                    this.builderSearchQuery = '';
-                },
-
-                initMemoryGame() {
-                    if (this.timerInterval) clearInterval(this.timerInterval);
-                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
-
-                    this.sprintSeconds = 0;
-                    let allWords = [...this.allFlattenedWords];
-                    allWords.sort(() => Math.random() - 0.5);
-                    this.totalPairs = Math.min(this.memoryPairCount, allWords.length);
-                    let selectedWords = allWords.slice(0, this.totalPairs);
-                    let cards = [];
-                    selectedWords.forEach((word, index) => {
-                        cards.push({ id: 'g_' + index, pairId: index, text: word.german, type: 'de', flipped: true, matched: false });
-                        cards.push({ id: 'm_' + index, pairId: index, text: word.meaning, type: 'en', flipped: true, matched: false });
-                    });
-                    this.memoryCards = cards.sort(() => Math.random() - 0.5);
-                    this.flippedCards = [];
-                    this.matchedPairs = 0;
-                    this.memoryMoves = 0;
-                    this.isChecking = false;
-
-                    this.isMemorizing = true;
-                    this.memorizeCountdown = 25;
-
-                    this.memorizeTimer = setInterval(() => {
-                        this.memorizeCountdown--;
-                        if (this.memorizeCountdown <= 0) {
-                            this.startMatchingNow();
-                        }
-                    }, 1000);
-                },
-
-                startMatchingNow() {
-                    if (this.memorizeTimer) clearInterval(this.memorizeTimer);
-                    this.isMemorizing = false;
-                    
-                    this.memoryCards.forEach(c => {
-                        if (!c.matched) c.flipped = false;
-                    });
-
-                    if (this.enableSprintTimer) {
-                        this.timerInterval = setInterval(() => {
-                            if (this.matchedPairs < this.totalPairs) this.sprintSeconds++;
-                        }, 1000);
-                    }
-                },
-
-                flipCard(card) {
-                    if (this.isMemorizing || this.isChecking || card.flipped || card.matched) return;
-                    card.flipped = true;
-                    this.flippedCards = [...this.flippedCards, card];
-                    if (this.flippedCards.length === 2) {
-                        this.memoryMoves++;
-                        this.isChecking = true;
-                        let [card1, card2] = this.flippedCards;
-                        if (card1.pairId === card2.pairId && card1.id !== card2.id) {
-                            card1.matched = true;
-                            card2.matched = true;
-                            this.matchedPairs++;
-                            this.flippedCards = [];
-                            this.isChecking = false;
-                            if (this.matchedPairs === this.totalPairs && this.timerInterval) clearInterval(this.timerInterval);
-                        } else {
-                            setTimeout(() => {
-                                card1.flipped = false;
-                                card2.flipped = false;
-                                this.flippedCards = [];
-                                this.isChecking = false;
-                            }, 900);
-                        }
-                    }
-                },
-
-                get airDensity() { return 1.225; },
-
-                get reynoldsNumber() {
-                    let rho = 1.225;
-                    let v = this.rocket.velocity;
-                    let L = this.rocket.length / 1000;
-                    let mu = 1.81e-5;
-                    let re = (rho * v * L) / mu;
-                    return re.toExponential(2);
-                },
-
-                get dragCoefficient() {
-                    let fineness = this.rocket.length / this.rocket.diameter;
-                    let cd = 0.3 + (1 / fineness) * 0.15;
-                    return cd.toFixed(2);
-                },
-
-                get dragForce() {
-                    let rho = 1.225;
-                    let v = this.rocket.velocity;
-                    let d = this.rocket.diameter / 1000;
-                    let S = Math.PI * Math.pow(d / 2, 2);
-                    let cd = parseFloat(this.dragCoefficient);
-                    let fd = 0.5 * rho * Math.pow(v, 2) * S * cd;
-                    return fd.toFixed(1);
-                },
-
-                get estimatedApogee() {
-                    let massKg = this.rocket.mass / 1000;
-                    let impulse = this.rocket.impulse;
-                    let totalEnergy = impulse * 35; 
-                    let cd = parseFloat(this.dragCoefficient);
-                    let dragPenalty = cd * 120; 
-                    let netEnergy = Math.max(50, totalEnergy - dragPenalty);
-                    let g = 9.81;
-                    let apogee = netEnergy / (massKg * g);
-                    return Math.round(Math.min(5000, Math.max(50, apogee)));
-                },
-
-                get thrustToWeightRatio() {
-                    let massKg = this.rocket.mass / 1000;
-                    let weightN = massKg * 9.81;
-                    let avgThrust = this.rocket.impulse / 1.5;
-                    return (avgThrust / weightN).toFixed(1);
-                },
-
-                get isFeasible() {
-                    return this.estimatedApogee >= this.rocket.targetAltitude;
-                },
-
-                get feasibilityMessage() {
-                    if (this.isFeasible) {
-                        return `Est. apogee (${this.estimatedApogee}m) meets or exceeds target (${this.rocket.targetAltitude}m). / Geschätzte Gipfelhöhe erreicht Zielhöhe.`;
+                selectItem(item) {
+                    if (this.activeTab === 'verbs' && item.conjugation) {
+                        this.selectedVerb = item;
+                        this.showVerbModal = true;
                     } else {
-                        return `Target (${this.rocket.targetAltitude}m) exceeds estimated apogee (${this.estimatedApogee}m). Increase impulse or reduce mass. / Zielhöhe zu hoch für den aktuellen Impuls.`;
+                        this.workspace.push({
+                            german: item.german,
+                            english: item.english,
+                            category: item.category || item.type,
+                            originalItem: item
+                        });
                     }
                 },
 
-                get bodyTubeHeight() {
-                    return Math.min(160, Math.max(60, this.rocket.length / 10));
+                addConjugatedVerb(pronoun, form) {
+                    this.workspace.push({
+                        german: form,
+                        english: `${this.selectedVerb.english} (${pronoun})`,
+                        category: "Conjugated Verb",
+                        isVerb: true,
+                        pronoun: pronoun,
+                        originalVerb: this.selectedVerb
+                    });
+                    this.showVerbModal = false;
+                    this.selectedVerb = null;
                 },
 
-                speak(text) {
-                    let utteranceText = typeof text === 'string' ? text : this.builtSentenceText;
-                    if ('speechSynthesis' in window && utteranceText) {
+                addInfinitiveVerb() {
+                    this.workspace.push({
+                        german: this.selectedVerb.german,
+                        english: this.selectedVerb.english,
+                        category: "Infinitive Verb",
+                        isVerb: true,
+                        originalVerb: this.selectedVerb
+                    });
+                    this.showVerbModal = false;
+                    this.selectedVerb = null;
+                },
+
+                removeToken(index) {
+                    this.workspace.splice(index, 1);
+                },
+
+                moveToken(index, direction) {
+                    let target = index + direction;
+                    if (target >= 0 && target < this.workspace.length) {
+                        let temp = this.workspace[index];
+                        this.workspace[index] = this.workspace[target];
+                        this.workspace[target] = temp;
+                    }
+                },
+
+                clearWorkspace() {
+                    this.workspace = [];
+                },
+
+                formatTokenDisplay(item, index) {
+                    let text = item.german;
+                    if (index === 0) {
+                        text = text.charAt(0).toUpperCase() + text.slice(1);
+                    }
+                    return text;
+                },
+
+                get constructedSentence() {
+                    if (this.workspace.length === 0) return '';
+                    let str = this.workspace.map((item, idx) => this.formatTokenDisplay(item, idx)).join(' ');
+                    if (!str.endsWith('.') && !str.endsWith('?') && !str.endsWith('!')) {
+                        str += '.';
+                    }
+                    return str;
+                },
+
+                get grammarCheck() {
+                    if (this.workspace.length < 2) {
+                        return { valid: true, message: "Fügen Sie weitere Wörter hinzu..." };
+                    }
+
+                    let hasSubordinate = this.workspace.some(t => t.category === "Subordinating Conjunction");
+                    let verbIndex = this.workspace.findIndex(t => t.isVerb);
+
+                    if (hasSubordinate && verbIndex !== -1) {
+                        if (verbIndex !== this.workspace.length - 1) {
+                            return { valid: false, message: "⚠️ Nebensatz-Regel: Das Verb muss ganz am Ende stehen!" };
+                        }
+                    } else if (verbIndex !== -1 && verbIndex !== 1 && verbIndex !== 0) {
+                        return { valid: false, message: "⚠️ V2-Regel: Im Hauptsatz steht das konjugierte Verb gewöhnlich an Position 2." };
+                    }
+
+                    return { valid: true, message: "✓ Grammatik sieht gut aus!" };
+                },
+
+                speakSentence() {
+                    if (!this.constructedSentence) return;
+                    if ('speechSynthesis' in window) {
                         window.speechSynthesis.cancel();
-                        let utterance = new SpeechSynthesisUtterance(utteranceText);
+                        let utterance = new SpeechSynthesisUtterance(this.constructedSentence);
                         utterance.lang = 'de-DE';
+                        utterance.rate = 0.9;
                         window.speechSynthesis.speak(utterance);
                     }
-                },
-
-                toggleStar(num) {
-                    if (this.starredWords.includes(num)) {
-                        this.starredWords = this.starredWords.filter(n => n !== num);
-                    } else {
-                        this.starredWords = [...this.starredWords, num];
-                    }
-                    localStorage.setItem('starred_physics', JSON.stringify(this.starredWords));
-                },
-
-                get builtSentenceText() {
-                    return this.builtSentence.join(' ');
-                },
-
-                checkSentence() {
-                    if (this.builtSentence.length === 0) {
-                        this.feedback = { valid: false, message: 'Please add terms to your flight log workspace first.', translation: 'N/A' };
-                        return;
-                    }
-                    this.feedback = {
-                        valid: true,
-                        message: 'Flight log structure compiled successfully. Physics terminology verified.',
-                        translation: 'Log entry: ' + this.builtSentenceText
-                    };
-                },
-
-                get allFlattenedWords() {
-                    let list = [];
-                    this.sections.forEach(sec => {
-                        sec.words.forEach(w => {
-                            list.push({ ...w, sectionName: sec.name });
-                        });
-                    });
-                    return list;
-                },
-
-                get filteredSections() {
-                    let q = this.searchQuery.toLowerCase();
-                    return this.sections.map(sec => {
-                        let filteredWords = sec.words.filter(w => {
-                            let matchesSearch = w.german.toLowerCase().includes(q) || 
-                                                w.meaning.toLowerCase().includes(q) || 
-                                                w.num.toString().includes(q);
-                            let matchesSection = this.selectedSection === 'all' || sec.id === this.selectedSection;
-                            let matchesStar = !this.showStarredOnly || this.starredWords.includes(w.num);
-                            return matchesSearch && matchesSection && matchesStar;
-                        });
-                        return { ...sec, words: filteredWords };
-                    }).filter(sec => sec.words.length > 0);
-                },
-
-                get filteredWordsList() {
-                    let list = [];
-                    this.filteredSections.forEach(sec => {
-                        sec.words.forEach(w => {
-                            list.push({ ...w, sectionName: sec.name });
-                        });
-                    });
-                    return list;
-                },
-
-                get totalFilteredWords() {
-                    return this.filteredWordsList.length;
-                },
-
-                get currentWord() {
-                    let list = this.filteredWordsList;
-                    if (list.length === 0) return { num: 0, german: 'No terms found', meaning: '', type: '', sectionName: '' };
-                    if (this.currentCardIndex >= list.length) this.currentCardIndex = 0;
-                    return list[this.currentCardIndex];
-                },
-
-                nextCard() {
-                    this.flipped = false;
-                    let len = this.filteredWordsList.length;
-                    if (len > 0) this.currentCardIndex = (this.currentCardIndex + 1) % len;
-                },
-
-                prevCard() {
-                    this.flipped = false;
-                    let len = this.filteredWordsList.length;
-                    if (len > 0) this.currentCardIndex = (this.currentCardIndex - 1 + len) % len;
-                },
-
-                randomCard() {
-                    let len = this.filteredWordsList.length;
-                    if (len > 1) {
-                        let randomIndex;
-                        do {
-                            randomIndex = Math.floor(Math.random() * len);
-                        } while (randomIndex === this.currentCardIndex);
-                        this.currentCardIndex = randomIndex;
-                    }
-                },
-
-                initQuiz() {
-                    let pool = [...this.allFlattenedWords];
-                    pool.sort(() => Math.random() - 0.5);
-                    this.quizPool = pool.slice(0, 10);
-                    this.quizIndex = 0;
-                    this.quizScore = 0;
-                    this.quizFinished = false;
-                    this.loadQuizQuestion();
-                },
-
-                loadQuizQuestion() {
-                    if (this.quizIndex >= this.quizPool.length) {
-                        this.quizFinished = true;
-                        return;
-                    }
-                    this.currentQuizQuestion = this.quizPool[this.quizIndex];
-                    let correctMeaning = this.currentQuizQuestion.meaning;
-                    let distractors = this.allFlattenedWords.filter(w => w.meaning !== correctMeaning).map(w => w.meaning);
-                    distractors.sort(() => Math.random() - 0.5);
-                    let options = [correctMeaning, ...distractors.slice(0, 3)];
-                    this.currentQuizOptions = options.sort(() => Math.random() - 0.5);
-                },
-
-                answerQuiz(selectedOption) {
-                    if (selectedOption === this.currentQuizQuestion.meaning) {
-                        this.quizScore++;
-                    }
-                    this.quizIndex++;
-                    this.loadQuizQuestion();
                 }
             }
         }
