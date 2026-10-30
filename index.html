@@ -46,7 +46,7 @@
     <!-- Main Content -->
     <main class="max-w-6xl mx-auto px-4 sm:px-8 py-8">
 
-        <!-- Controls: Search, Filters & Bookmarks -->
+        <!-- Controls: Search, Filters & Bookmarks (Visible in List & Cards) -->
         <div class="flex flex-col md:flex-row gap-4 mb-8" x-show="viewMode !== 'memory' && viewMode !== 'quiz' && viewMode !== 'builder' && viewMode !== 'rocket' && viewMode !== 'complex'">
             <div class="relative flex-1">
                 <input type="text" x-model="searchQuery" placeholder="Search physics term, English translation, or number..." 
@@ -196,18 +196,26 @@
                 </div>
             </div>
 
-            <!-- Physics Vocabulary Quick Add with Pagination -->
-            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg">
-                <div class="flex flex-wrap justify-between items-center mb-3 gap-2">
+            <!-- Physics Vocabulary Quick Add with Search Bar & Pagination -->
+            <div class="bg-slate-900 border border-slate-800 rounded-xl p-5 shadow-lg space-y-4">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
                     <div class="flex items-center gap-3">
                         <h4 class="font-bold text-cyan-400 text-sm uppercase tracking-wider">
-                            Vocabulary Terms (Showing <span x-text="builderPageWords.length"></span>)
+                            Vocabulary Terms (<span x-text="builderFilteredWords.length"></span>)
                         </h4>
                         <!-- Toggle for Article vs No-Article Terms -->
                         <button @click="toggleVocabularyMode()" class="text-xs px-2.5 py-1 rounded border transition font-mono" :class="useNoArticles ? 'bg-cyan-950 border-cyan-600 text-cyan-300' : 'bg-slate-950 border-slate-800 text-slate-400'">
                             <span x-text="useNoArticles ? 'Mode: noarticle.json' : 'Mode: physics.json'"></span>
                         </button>
                     </div>
+
+                    <!-- Builder Search Bar -->
+                    <div class="relative w-full sm:w-64">
+                        <input type="text" x-model="builderSearchQuery" placeholder="Filter terms..." 
+                            class="w-full bg-slate-950 border border-slate-800 rounded-lg px-3 py-1.5 pl-8 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 transition">
+                        <svg class="w-4 h-4 text-slate-500 absolute left-2.5 top-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </div>
+
                     <!-- Pagination Controls -->
                     <div class="flex items-center gap-2">
                         <button @click="prevBuilderPage()" :disabled="builderPageIndex === 0" class="px-2.5 py-1 bg-slate-950 border border-slate-800 disabled:opacity-40 rounded text-xs text-slate-300 hover:border-cyan-500 transition">Prev</button>
@@ -327,8 +335,8 @@
                         <template x-if="card.flipped || card.matched">
                             <div class="w-full flex flex-col items-center justify-center">
                                 <span class="text-[10px] font-mono tracking-wider uppercase mb-1 opacity-70"
-                                      :class="card.type === 'de' ? 'text-cyan-400' : 'text-indigo-400'"
-                                      x-text="card.type === 'de' ? '🇩🇪 GERMAN' : '🇬🇧 ENGLISH'"></span>
+                                    :class="card.type === 'de' ? 'text-cyan-400' : 'text-indigo-400'"
+                                    x-text="card.type === 'de' ? '🇩🇪 GERMAN' : '🇬🇧 ENGLISH'"></span>
                                 <div class="text-xs sm:text-sm font-semibold" x-text="card.text"></div>
                             </div>
                         </template>
@@ -516,6 +524,7 @@
             return {
                 viewMode: 'list',
                 searchQuery: '',
+                builderSearchQuery: '',
                 selectedSection: 'all',
                 currentCardIndex: 0,
                 flipped: false,
@@ -580,7 +589,6 @@
                 memorizeTimer: null,
 
                 async initData() {
-                    // Helper function to extract correct string values regardless of JSON schema
                     const extractStrings = (data) => {
                         if (Array.isArray(data)) {
                             return data.map(item => (typeof item === 'object' && item !== null) ? (item.german || item.deutsch || item.word || item.text || item.english) : String(item));
@@ -629,7 +637,7 @@
                         this.noArticleSource = 'Unavailable';
                     }
 
-                    // 3. Pronouns & Articles -> pronouns.json / pronounsandarticles.json
+                    // 3. Pronouns & Articles -> pronouns.json
                     try {
                         let resPronouns = await fetch('pronouns.json');
                         if (!resPronouns.ok) resPronouns = await fetch('pronounsandarticles.json');
@@ -694,7 +702,6 @@
                     return chunks;
                 },
 
-                // Sentence Builder Array Operations
                 addToSentence(word) {
                     this.builtSentence = [...this.builtSentence, word];
                     this.feedback = null;
@@ -705,7 +712,6 @@
                     this.feedback = null;
                 },
 
-                // Dynamic Vocabulary Selection between physics.json and noarticle.json
                 get activeSections() {
                     return (this.useNoArticles && this.noArticleSections.length > 0) ? this.noArticleSections : this.sections;
                 },
@@ -720,14 +726,23 @@
                     return list;
                 },
 
-                // Builder Vocabulary Pagination
+                get builderFilteredWords() {
+                    let q = (this.builderSearchQuery || '').toLowerCase();
+                    if (!q) return this.activeFlattenedWords;
+                    return this.activeFlattenedWords.filter(w => 
+                        w.german.toLowerCase().includes(q) || 
+                        w.meaning.toLowerCase().includes(q) || 
+                        w.num.toString().includes(q)
+                    );
+                },
+
                 get totalBuilderPages() {
-                    return Math.ceil(this.activeFlattenedWords.length / this.builderPageSize) || 1;
+                    return Math.ceil(this.builderFilteredWords.length / this.builderPageSize) || 1;
                 },
 
                 get builderPageWords() {
                     let start = this.builderPageIndex * this.builderPageSize;
-                    return this.activeFlattenedWords.slice(start, start + this.builderPageSize);
+                    return this.builderFilteredWords.slice(start, start + this.builderPageSize);
                 },
 
                 nextBuilderPage() {
@@ -745,9 +760,9 @@
                 toggleVocabularyMode() {
                     this.useNoArticles = !this.useNoArticles;
                     this.builderPageIndex = 0;
+                    this.builderSearchQuery = '';
                 },
 
-                // Memory Match Game with Distinct Colors for DE and EN Cards
                 initMemoryGame() {
                     if (this.timerInterval) clearInterval(this.timerInterval);
                     if (this.memorizeTimer) clearInterval(this.memorizeTimer);
@@ -820,7 +835,6 @@
                     }
                 },
 
-                // Rocket Simulator Computed Properties
                 get airDensity() { return 1.225; },
 
                 get reynoldsNumber() {
@@ -1020,15 +1034,5 @@
             }
         }
     </script>
-    <script>
-        if ('serviceWorker' in navigator) {
-            window.addEventListener('load', () => {
-                navigator.serviceWorker.register('./sw.js')
-                    .then(reg => console.log('ServiceWorker registered successfully:', reg.scope))
-                    .catch(err => console.log('ServiceWorker registration failed:', err));
-            });
-        }
-    </script>
 </body>
 </html>
-
