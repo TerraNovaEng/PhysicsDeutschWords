@@ -554,9 +554,9 @@
 
                 // Dedicated Toolboxes for Each JSON Resource
                 physicsToolbox: {
-                    pronouns: [],     // Loaded from pronouns.json or fallback
-                    verbs: [],        // Loaded from verbs.json
-                    modifiers: []     // Loaded from modifiers.json
+                    pronouns: [],       // Loaded from pronounsandarticles.json
+                    verbs: [],          // Loaded from verbs.json
+                    modifiers: []       // Loaded from modifiers.json
                 },
                 
                 quizIndex: 0,
@@ -631,14 +631,14 @@
                         this.noArticleSource = 'Unavailable';
                     }
 
-                    // 3. Pronouns & Articles -> pronouns.json
+                    // 3. Pronouns & Articles -> pronounsandarticles.json
                     try {
-                        let resPronouns = await fetch('pronouns.json');
-                        if (!resPronouns.ok) resPronouns = await fetch('pronounsandarticles.json');
+                        let resPronouns = await fetch('pronounsandarticles.json');
+                        if (!resPronouns.ok) resPronouns = await fetch('pronouns.json');
                         if (resPronouns.ok) {
                             let pronounsData = await resPronouns.json();
                             this.physicsToolbox.pronouns = extractStrings(pronounsData);
-                            this.pronounsSource = 'pronouns.json';
+                            this.pronounsSource = 'pronounsandarticles.json';
                         } else {
                             throw new Error('Pronouns file unavailable');
                         }
